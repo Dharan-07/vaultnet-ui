@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Wallet, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { connectWallet, getWalletAddress, getBalance } from '@/lib/web3';
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ export const WalletButton = () => {
   const [balance, setBalance] = useState<string>('0');
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     // Check if wallet is already connected
@@ -36,6 +38,15 @@ export const WalletButton = () => {
   }, []);
 
   const handleConnect = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to connect your wallet',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsConnecting(true);
     try {
       const addr = await connectWallet();
