@@ -30,7 +30,7 @@ export const SearchBar = ({
           placeholder={placeholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-12 pr-24 h-12 text-base"
+          className="pl-12 pr-24 h-12 text-base text-foreground"
         />
         <Button 
           type="submit" 
