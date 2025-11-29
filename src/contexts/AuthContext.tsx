@@ -74,7 +74,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     
-    // Update last login timestamp in Firestore
+    // Store login event in login collection
+    await setDoc(doc(db, 'login', `${userCredential.user.uid}_${Date.now()}`), {
+      userId: userCredential.user.uid,
+      email: userCredential.user.email,
+      loginAt: serverTimestamp(),
+    });
+
+    // Update last login timestamp in users collection
     await updateDoc(doc(db, 'users', userCredential.user.uid), {
       lastLogin: serverTimestamp(),
     }).catch(() => {
