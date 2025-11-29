@@ -7,12 +7,14 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 interface User {
   id: string;
   email: string;
   name: string;
+  walletAddress?: string;
 }
 
 interface AuthContextType {
@@ -21,6 +23,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  connectWallet: (walletAddress: string) => Promise<void>;
+  disconnectWallet: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -34,20 +38,30 @@ export const useAuth = () => {
   return context;
 };
 
-const mapFirebaseUser = (firebaseUser: FirebaseUser): User => ({
-  id: firebaseUser.uid,
-  email: firebaseUser.email || '',
-  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
-});
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setUser(mapFirebaseUser(firebaseUser));
+        // Fetch user data from Firestore
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            name: userData.name || firebaseUser.displayName || '',
+            walletAddress: userData.walletAddress || undefined,
+          });
+        } else {
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+          });
+        }
       } else {
         setUser(null);
       }
@@ -58,19 +72,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Update last login timestamp in Firestore
+    await updateDoc(doc(db, 'users', userCredential.user.uid), {
+      lastLogin: serverTimestamp(),
+    }).catch(() => {
+      // Document might not exist yet, ignore error
+    });
   };
 
   const signUp = async (name: string, email: string, password: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName: name });
-    // Update local state with the name
-    setUser(mapFirebaseUser({ ...userCredential.user, displayName: name } as FirebaseUser));
+    
+    // Store user data in Firestore
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      name,
+      email,
+      createdAt: serverTimestamp(),
+      lastLogin: serverTimestamp(),
+    });
+
+    setUser({
+      id: userCredential.user.uid,
+      email,
+      name,
+    });
   };
 
   const signOut = async () => {
     await firebaseSignOut(auth);
     setUser(null);
+  };
+
+  const connectWallet = async (walletAddress: string) => {
+    if (!user) throw new Error('Must be logged in to connect wallet');
+    
+    // Update wallet address in Firestore
+    await updateDoc(doc(db, 'users', user.id), {
+      walletAddress,
+      walletConnectedAt: serverTimestamp(),
+    });
+
+    setUser({ ...user, walletAddress });
+  };
+
+  const disconnectWallet = async () => {
+    if (!user) throw new Error('Must be logged in to disconnect wallet');
+    
+    // Remove wallet address from Firestore
+    await updateDoc(doc(db, 'users', user.id), {
+      walletAddress: null,
+      walletConnectedAt: null,
+    });
+
+    setUser({ ...user, walletAddress: undefined });
   };
 
   const value = {
@@ -79,6 +136,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signIn,
     signUp,
     signOut,
+    connectWallet,
+    disconnectWallet,
     isLoading,
   };
 
