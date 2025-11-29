@@ -3,7 +3,7 @@ import { Wallet, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { connectWallet, getWalletAddress, getBalance } from '@/lib/web3';
+import { connectWallet as web3ConnectWallet, getBalance } from '@/lib/web3';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,18 +14,15 @@ import {
 } from './ui/dropdown-menu';
 
 export const WalletButton = () => {
-  const [address, setAddress] = useState<string | null>(null);
   const [balance, setBalance] = useState<string>('0');
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, connectWallet, disconnectWallet } = useAuth();
 
   useEffect(() => {
-    // Check if wallet is already connected
-    const checkConnection = async () => {
-      const addr = getWalletAddress();
-      if (addr) {
-        setAddress(addr);
+    // Fetch balance if wallet is connected
+    const fetchBalance = async () => {
+      if (user?.walletAddress) {
         try {
           const bal = await getBalance();
           setBalance(bal);
@@ -34,8 +31,8 @@ export const WalletButton = () => {
         }
       }
     };
-    checkConnection();
-  }, []);
+    fetchBalance();
+  }, [user?.walletAddress]);
 
   const handleConnect = async () => {
     if (!isAuthenticated) {
@@ -49,8 +46,11 @@ export const WalletButton = () => {
 
     setIsConnecting(true);
     try {
-      const addr = await connectWallet();
-      setAddress(addr);
+      // Connect via Web3
+      const addr = await web3ConnectWallet();
+      
+      // Save to Firestore
+      await connectWallet(addr);
       
       const bal = await getBalance();
       setBalance(bal);
@@ -70,13 +70,21 @@ export const WalletButton = () => {
     }
   };
 
-  const handleDisconnect = () => {
-    setAddress(null);
-    setBalance('0');
-    toast({
-      title: 'Wallet Disconnected',
-      description: 'Your wallet has been disconnected',
-    });
+  const handleDisconnect = async () => {
+    try {
+      await disconnectWallet();
+      setBalance('0');
+      toast({
+        title: 'Wallet Disconnected',
+        description: 'Your wallet has been disconnected',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to disconnect wallet',
+        variant: 'destructive',
+      });
+    }
   };
 
   const formatAddress = (addr: string) => {
@@ -87,7 +95,7 @@ export const WalletButton = () => {
     return parseFloat(bal).toFixed(4);
   };
 
-  if (!address) {
+  if (!user?.walletAddress) {
     return (
       <Button
         onClick={handleConnect}
@@ -105,7 +113,7 @@ export const WalletButton = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Wallet className="w-4 h-4" />
-          <span className="hidden sm:inline">{formatAddress(address)}</span>
+          <span className="hidden sm:inline">{formatAddress(user.walletAddress)}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -113,7 +121,7 @@ export const WalletButton = () => {
         <DropdownMenuSeparator />
         <div className="px-2 py-1.5 text-sm">
           <div className="text-muted-foreground">Address</div>
-          <div className="font-mono text-xs">{address}</div>
+          <div className="font-mono text-xs">{user.walletAddress}</div>
         </div>
         <div className="px-2 py-1.5 text-sm">
           <div className="text-muted-foreground">Balance</div>
