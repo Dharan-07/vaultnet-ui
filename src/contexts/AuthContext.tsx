@@ -1,4 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { 
+  User as FirebaseUser,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  updateProfile
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 interface User {
   id: string;
@@ -11,7 +20,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -25,50 +34,43 @@ export const useAuth = () => {
   return context;
 };
 
+const mapFirebaseUser = (firebaseUser: FirebaseUser): User => ({
+  id: firebaseUser.uid,
+  email: firebaseUser.email || '',
+  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+});
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored auth on mount
-    const storedUser = localStorage.getItem('vaultnet_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(mapFirebaseUser(firebaseUser));
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const user: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      email,
-      name: email.split('@')[0],
-    };
-    
-    setUser(user);
-    localStorage.setItem('vaultnet_user', JSON.stringify(user));
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signUp = async (name: string, email: string, password: string) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const user: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      email,
-      name,
-    };
-    
-    setUser(user);
-    localStorage.setItem('vaultnet_user', JSON.stringify(user));
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(userCredential.user, { displayName: name });
+    // Update local state with the name
+    setUser(mapFirebaseUser({ ...userCredential.user, displayName: name } as FirebaseUser));
   };
 
-  const signOut = () => {
+  const signOut = async () => {
+    await firebaseSignOut(auth);
     setUser(null);
-    localStorage.removeItem('vaultnet_user');
   };
 
   const value = {
