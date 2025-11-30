@@ -5,7 +5,9 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -22,6 +24,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   connectWallet: (walletAddress: string) => Promise<void>;
   disconnectWallet: () => Promise<void>;
@@ -37,6 +40,8 @@ export const useAuth = () => {
   }
   return context;
 };
+
+const googleProvider = new GoogleAuthProvider();
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -108,6 +113,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const signInWithGoogle = async () => {
+    const result = await signInWithPopup(auth, googleProvider);
+    const firebaseUser = result.user;
+    
+    // Check if user exists in Firestore
+    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+    
+    if (!userDoc.exists()) {
+      // Create new user document for first-time Google sign-in
+      await setDoc(doc(db, 'users', firebaseUser.uid), {
+        name: firebaseUser.displayName || '',
+        email: firebaseUser.email,
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+        authProvider: 'google',
+      });
+    }
+    
+    // Store login event
+    await setDoc(doc(db, 'login', `${firebaseUser.uid}_${Date.now()}`), {
+      userId: firebaseUser.uid,
+      email: firebaseUser.email,
+      loginAt: serverTimestamp(),
+      authProvider: 'google',
+    });
+
+    // Update last login
+    await updateDoc(doc(db, 'users', firebaseUser.uid), {
+      lastLogin: serverTimestamp(),
+    }).catch(() => {});
+  };
+
   const signOut = async () => {
     await firebaseSignOut(auth);
     setUser(null);
@@ -150,6 +187,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAuthenticated: !!user,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     connectWallet,
     disconnectWallet,
