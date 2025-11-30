@@ -116,7 +116,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const connectWallet = async (walletAddress: string) => {
     if (!user) throw new Error('Must be logged in to connect wallet');
     
-    // Update wallet address in Firestore
+    // Store wallet connection event in wallets collection
+    await setDoc(doc(db, 'wallets', `${user.id}_${Date.now()}`), {
+      userId: user.id,
+      email: user.email,
+      walletAddress,
+      connectedAt: serverTimestamp(),
+    });
+
+    // Update wallet address in users collection
     await updateDoc(doc(db, 'users', user.id), {
       walletAddress,
       walletConnectedAt: serverTimestamp(),
