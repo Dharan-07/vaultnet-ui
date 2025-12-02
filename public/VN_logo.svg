@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
 <svg
    width="573.41608"
    height="594.23865"
@@ -16,25 +14,25 @@
      style="mix-blend-mode:normal"
      transform="translate(-64.331373,-60.371587)">
     <path
-       style="mix-blend-mode:normal;fill:#00ffff;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="mix-blend-mode:normal;fill:#24A0D6;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        id="path1"
        d="M 189.11023,109.92155 C 185.96618,130.62637 75.449635,173.86068 59.090761,160.78545 42.731887,147.71022 60.548146,30.382926 80.051066,22.753342 99.553985,15.123757 192.25427,89.216736 189.11023,109.92155 Z"
        transform="matrix(0.99226655,0.09403618,-0.09434669,0.99554302,38.419823,30.613167)" />
     <ellipse
-       style="opacity:1;mix-blend-mode:normal;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="opacity:1;mix-blend-mode:normal;fill:#ffffff;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        id="path6"
        cx="138.87334"
        cy="137.44716"
        rx="64.712486"
        ry="65.782112" />
     <path
-       style="mix-blend-mode:normal;fill:#00ffff;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="mix-blend-mode:normal;fill:#24A0D6;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        id="path3"
        d="M 189.11023,109.92155 C 185.96618,130.62637 75.449635,173.86068 59.090761,160.78545 42.731887,147.71022 60.548146,30.382926 80.051066,22.753342 99.553985,15.123757 192.25427,89.216736 189.11023,109.92155 Z"
        transform="matrix(0.68420295,-0.72477724,0.72717045,0.6864622,-6.2723343,149.85406)" />
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:58.2083px;font-family:'Berlin Sans FB Demi';-inkscape-font-specification:'Berlin Sans FB Demi';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:58.2083px;font-family:'Berlin Sans FB Demi';-inkscape-font-specification:'Berlin Sans FB Demi';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        x="139.46933"
        y="160.08762"
        id="text3"><tspan
@@ -44,7 +42,7 @@
          y="160.08762">N</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:58.2083px;font-family:'Berlin Sans FB Demi';-inkscape-font-specification:'Berlin Sans FB Demi';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:58.2083px;font-family:'Berlin Sans FB Demi';-inkscape-font-specification:'Berlin Sans FB Demi';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#1a5568;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        x="99.53656"
        y="159.37456"
        id="text4"><tspan
@@ -54,17 +52,17 @@
          y="159.37456">V</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:58.2083px;font-family:'Berlin Sans FB Demi';-inkscape-font-specification:'Berlin Sans FB Demi';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:58.2083px;font-family:'Berlin Sans FB Demi';-inkscape-font-specification:'Berlin Sans FB Demi';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#1a5568;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        x="140.89551"
        y="161.51379"
        id="text5"><tspan
          id="tspan5"
-         style="fill:#28220b;stroke-width:0.264583"
+         style="fill:#1a5568;stroke-width:0.264583"
          x="140.89551"
          y="161.51379">N</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:58.2083px;font-family:'Berlin Sans FB Demi';-inkscape-font-specification:'Berlin Sans FB Demi';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:58.2083px;font-family:'Berlin Sans FB Demi';-inkscape-font-specification:'Berlin Sans FB Demi';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        x="101.31927"
        y="159.90936"
        id="text6"><tspan
@@ -73,42 +71,42 @@
          x="101.31927"
          y="159.90936">V</tspan></text>
     <ellipse
-       style="opacity:1;fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="opacity:1;fill:#1a5568;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        id="path7"
        cx="71.843338"
        cy="110.43907"
        rx="2.8523409"
        ry="2.6740696" />
     <ellipse
-       style="opacity:1;fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="opacity:1;fill:#1a5568;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        id="ellipse7"
        cx="149.83702"
        cy="210.00359"
        rx="2.8523409"
        ry="2.6740696" />
     <ellipse
-       style="opacity:1;fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="opacity:1;fill:#1a5568;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        id="ellipse8"
        cx="196.72237"
        cy="93.414146"
        rx="2.8523409"
        ry="2.6740696" />
     <ellipse
-       style="opacity:1;fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="opacity:1;fill:#1a5568;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        id="ellipse9"
        cx="209.32805"
        cy="156.44257"
        rx="2.8523409"
        ry="2.6740696" />
     <ellipse
-       style="opacity:1;fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="opacity:1;fill:#1a5568;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        id="ellipse10"
        cx="86.800789"
        cy="191.23425"
        rx="2.8523409"
        ry="2.6740696" />
     <ellipse
-       style="opacity:1;fill:#28220b;fill-opacity:1;stroke:#000000;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
+       style="opacity:1;fill:#1a5568;fill-opacity:1;stroke:#1a7ba8;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:bevel;stroke-opacity:1;paint-order:stroke fill markers"
        id="ellipse11"
        cx="117.30655"
        cy="66.690086"
