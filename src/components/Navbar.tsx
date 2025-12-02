@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Search, Upload, Package, LayoutDashboard, LogOut, User } from 'lucide-react';
+import { Search, Upload, LayoutDashboard, LogOut, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { WalletButton } from './WalletButton';
+import VNLogo from '@/assets/VN_logo.svg';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
@@ -21,9 +22,7 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <Package className="w-5 h-5 text-white" />
-            </div>
+            <img src={VNLogo} alt="VaultNet Logo" className="w-10 h-10" />
             <span className="font-bold text-xl group-hover:text-primary transition-colors">
               VaultNet
             </span>
@@ -41,7 +40,6 @@ export const Navbar = () => {
               <>
                 <Link to="/marketplace">
                   <Button variant="ghost" className="gap-2">
-                    <Package className="w-4 h-4" />
                     Models
                   </Button>
                 </Link>
