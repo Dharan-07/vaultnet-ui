@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Shield, Database, Cpu } from 'lucide-react';
+import { Database, Shield, Cpu } from 'lucide-react';
+import VNLogo from '@/assets/VN_logo.svg';
 
 const Welcome = () => {
   return (
@@ -13,9 +14,7 @@ const Welcome = () => {
       <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
         {/* Logo/Icon */}
         <div className="flex justify-center mb-8">
-          <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20">
-            <Shield className="w-10 h-10 text-primary" />
-          </div>
+          <img src={VNLogo} alt="VaultNet Logo" className="w-24 h-24" />
         </div>
         
         {/* Website Name */}

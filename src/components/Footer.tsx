@@ -1,5 +1,6 @@
-import { Package, Github, Twitter, FileText } from 'lucide-react';
+import { Github, Twitter, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import VNLogo from '@/assets/VN_logo.svg';
 
 export const Footer = () => {
   return (
@@ -9,9 +10,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                <Package className="w-5 h-5 text-white" />
-              </div>
+              <img src={VNLogo} alt="VaultNet Logo" className="w-10 h-10" />
               <span className="font-bold text-xl">VaultNet</span>
             </div>
             <p className="text-sm text-muted-foreground">
