@@ -1,6 +1,6 @@
 import { Github, Twitter, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import VNLogo from '@/assets/VN_logo.svg';
+import Logo from '@/assets/logo.svg';
 
 export const Footer = () => {
   return (
@@ -10,8 +10,8 @@ export const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <img src={VNLogo} alt="VaultNet Logo" className="w-10 h-10" />
-              <span className="font-bold text-xl">VaultNet</span>
+              <img src={Logo} alt="Bitmap Logo" className="w-10 h-10" />
+              <span className="font-bold text-xl">Bitmap</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Decentralized AI Model Repository powered by Web3 and IPFS
@@ -80,7 +80,7 @@ export const Footer = () => {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>© 2024 VaultNet. Built on Ethereum & IPFS.</p>
+          <p>© 2024 Bitmap. Built on Ethereum & IPFS.</p>
         </div>
       </div>
     </footer>
