@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu } from 'lucide-react';
-import VNLogo from '@/assets/VN_logo.svg';
+import Logo from '@/assets/logo.svg';
 
 const Welcome = () => {
   return (
@@ -14,12 +14,12 @@ const Welcome = () => {
       <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
         {/* Logo/Icon */}
         <div className="flex justify-center mb-8">
-          <img src={VNLogo} alt="VaultNet Logo" className="w-24 h-24" />
+          <img src={Logo} alt="Bitmap Logo" className="w-24 h-24" />
         </div>
         
         {/* Website Name */}
         <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 tracking-tight">
-          Vault<span className="text-primary">Net</span>
+          Bitmap
         </h1>
         
         {/* Description */}
@@ -57,7 +57,7 @@ const Welcome = () => {
       
       {/* Footer */}
       <p className="absolute bottom-8 text-sm text-muted-foreground/50">
-        © 2024 VaultNet. All rights reserved.
+        © 2024 Bitmap. All rights reserved.
       </p>
     </div>
   );
