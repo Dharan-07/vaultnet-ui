@@ -13,6 +13,8 @@ import Upload from "./pages/Upload";
 import Dashboard from "./pages/Dashboard";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import Datasets from "./pages/Datasets";
+import UploadDataset from "./pages/UploadDataset";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/signup" element={<SignUp />} />
             <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
             <Route path="/model/:id" element={<ProtectedRoute><ModelDetails /></ProtectedRoute>} />
+            <Route path="/datasets" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
+            <Route path="/upload-dataset" element={<ProtectedRoute><UploadDataset /></ProtectedRoute>} />
             <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

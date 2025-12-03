@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Search, Upload, LayoutDashboard, LogOut, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { WalletButton } from './WalletButton';
-import Logo from '@/assets/logo.svg';
+import Logo from '@/assets/vn_logo.svg';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
@@ -22,9 +22,9 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <img src={Logo} alt="Bitmap Logo" className="w-10 h-10" />
+            <img src={Logo} alt="VaultNet Logo" className="w-10 h-10" />
             <span className="font-bold text-xl group-hover:text-primary transition-colors">
-              Bitmap
+              VaultNet
             </span>
           </Link>
 
@@ -41,6 +41,11 @@ export const Navbar = () => {
                 <Link to="/marketplace">
                   <Button variant="ghost" className="gap-2">
                     Models
+                  </Button>
+                </Link>
+                <Link to="/datasets">
+                  <Button variant="ghost" className="gap-2">
+                    Datasets
                   </Button>
                 </Link>
                 <Link to="/upload">

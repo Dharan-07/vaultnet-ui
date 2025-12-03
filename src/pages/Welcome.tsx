@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu } from 'lucide-react';
-import Logo from '@/assets/logo.svg';
+import Logo from '@/assets/vn_logo.svg';
 
 const Welcome = () => {
   return (
@@ -14,21 +14,21 @@ const Welcome = () => {
       <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
         {/* Logo/Icon */}
         <div className="flex justify-center mb-8">
-          <img src={Logo} alt="Bitmap Logo" className="w-24 h-24" />
+          <img src={Logo} alt="VaultNet Logo" className="w-24 h-24" />
         </div>
         
         {/* Website Name */}
         <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 tracking-tight">
-          Bitmap
+          VaultNet
         </h1>
         
         {/* Description */}
         <p className="text-lg md:text-xl text-muted-foreground mb-4 leading-relaxed">
-          The Decentralized AI Model Repository
+          The Decentralized AI Model & Dataset Repository
         </p>
         <p className="text-base text-muted-foreground/80 mb-12 max-w-xl mx-auto">
-          Discover, share, and monetize AI models securely on the blockchain. 
-          Your models, your ownership, your control.
+          Discover, share, and monetize AI models and datasets securely on the blockchain. 
+          Your data, your ownership, your control.
         </p>
         
         {/* Features preview */}
@@ -57,7 +57,7 @@ const Welcome = () => {
       
       {/* Footer */}
       <p className="absolute bottom-8 text-sm text-muted-foreground/50">
-        © 2024 Bitmap. All rights reserved.
+        © 2024 VaultNet. All rights reserved.
       </p>
     </div>
   );
