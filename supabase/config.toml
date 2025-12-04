@@ -2,3 +2,6 @@ project_id = "gakxasjrvixvauulqenf"
 
 [functions.kaggle-datasets]
 verify_jwt = false
+
+[functions.huggingface-models]
+verify_jwt = false
