@@ -1,22 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Shield, Zap } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { SearchBar } from '@/components/SearchBar';
-import { ModelCard } from '@/components/ModelCard';
+import { ModelCard, Model } from '@/components/ModelCard';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { getFeaturedModels, getTrendingModels } from '@/data/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
-  const featuredModels = getFeaturedModels();
-  const trendingModels = getTrendingModels();
+  const [featuredModels, setFeaturedModels] = useState<Model[]>([]);
+  const [trendingModels, setTrendingModels] = useState<Model[]>([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
+  const [loadingTrending, setLoadingTrending] = useState(true);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      // Fetch featured models (by downloads)
+      try {
+        const { data: featuredData, error: featuredError } = await supabase.functions.invoke('huggingface-models', {
+          body: null,
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (featuredError) throw featuredError;
+        
+        // Handle the response - it might be returned directly or wrapped
+        const featured = Array.isArray(featuredData) ? featuredData : [];
+        setFeaturedModels(featured.slice(0, 3));
+      } catch (error) {
+        console.error('Error fetching featured models:', error);
+      } finally {
+        setLoadingFeatured(false);
+      }
+
+      // Fetch trending models (by likes)
+      try {
+        const { data: trendingData, error: trendingError } = await supabase.functions.invoke('huggingface-models', {
+          body: null,
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (trendingError) throw trendingError;
+        
+        const trending = Array.isArray(trendingData) ? trendingData : [];
+        setTrendingModels(trending.slice(0, 6));
+      } catch (error) {
+        console.error('Error fetching trending models:', error);
+      } finally {
+        setLoadingTrending(false);
+      }
+    };
+
+    fetchModels();
+  }, []);
 
   const handleSearch = (query: string) => {
     console.log('Searching for:', query);
-    // Navigate to marketplace with search query
     window.location.href = `/marketplace?q=${encodeURIComponent(query)}`;
   };
+
+  const ModelCardSkeleton = () => (
+    <div className="space-y-4 p-6 border rounded-lg">
+      <Skeleton className="h-6 w-3/4" />
+      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-16 w-full" />
+      <div className="flex gap-2">
+        <Skeleton className="h-6 w-16" />
+        <Skeleton className="h-6 w-16" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -105,9 +160,19 @@ const Index = () => {
           </div>
 
           <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
-            {featuredModels.slice(0, 3).map(model => (
-              <ModelCard key={model.id} model={model} />
-            ))}
+            {loadingFeatured ? (
+              <>
+                <ModelCardSkeleton />
+                <ModelCardSkeleton />
+                <ModelCardSkeleton />
+              </>
+            ) : featuredModels.length > 0 ? (
+              featuredModels.map(model => (
+                <ModelCard key={model.id} model={model} />
+              ))
+            ) : (
+              <p className="col-span-3 text-center text-muted-foreground">No featured models available</p>
+            )}
           </div>
         </div>
       </section>
@@ -126,9 +191,22 @@ const Index = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {trendingModels.map(model => (
-              <ModelCard key={model.id} model={model} />
-            ))}
+            {loadingTrending ? (
+              <>
+                <ModelCardSkeleton />
+                <ModelCardSkeleton />
+                <ModelCardSkeleton />
+                <ModelCardSkeleton />
+                <ModelCardSkeleton />
+                <ModelCardSkeleton />
+              </>
+            ) : trendingModels.length > 0 ? (
+              trendingModels.map(model => (
+                <ModelCard key={model.id} model={model} />
+              ))
+            ) : (
+              <p className="col-span-3 text-center text-muted-foreground">No trending models available</p>
+            )}
           </div>
         </div>
       </section>
