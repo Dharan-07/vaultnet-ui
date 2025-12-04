@@ -1,1 +1,4 @@
 project_id = "gakxasjrvixvauulqenf"
+
+[functions.kaggle-datasets]
+verify_jwt = false
