@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      uploaded_datasets: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          downloads: number | null
+          file_path: string
+          file_size: number
+          format: string | null
+          id: string
+          name: string
+          tags: string[] | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          downloads?: number | null
+          file_path: string
+          file_size: number
+          format?: string | null
+          id?: string
+          name: string
+          tags?: string[] | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          downloads?: number | null
+          file_path?: string
+          file_size?: number
+          format?: string | null
+          id?: string
+          name?: string
+          tags?: string[] | null
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
