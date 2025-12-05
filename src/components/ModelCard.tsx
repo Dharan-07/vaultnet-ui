@@ -13,11 +13,9 @@ export interface Model {
   cid: string;
   versionCount: number;
   downloads: number;
-  likes?: number;
   category: string;
   uploadDate: string;
   tags: string[];
-  url?: string;
 }
 
 interface ModelCardProps {
