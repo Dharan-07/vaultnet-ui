@@ -7,7 +7,9 @@ import {
   onAuthStateChanged,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -48,6 +50,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check for redirect result on mount
+    getRedirectResult(auth).then(async (result) => {
+      if (result?.user) {
+        const firebaseUser = result.user;
+        // Check if user exists in Firestore
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        
+        if (!userDoc.exists()) {
+          // Create new user document for first-time Google sign-in
+          await setDoc(doc(db, 'users', firebaseUser.uid), {
+            name: firebaseUser.displayName || '',
+            email: firebaseUser.email,
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+            authProvider: 'google',
+          });
+        }
+        
+        // Store login event
+        await setDoc(doc(db, 'login', `${firebaseUser.uid}_${Date.now()}`), {
+          userId: firebaseUser.uid,
+          email: firebaseUser.email,
+          loginAt: serverTimestamp(),
+          authProvider: 'google',
+        });
+
+        // Update last login
+        await updateDoc(doc(db, 'users', firebaseUser.uid), {
+          lastLogin: serverTimestamp(),
+        }).catch(() => {});
+      }
+    }).catch((error) => {
+      console.error('Redirect result error:', error);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         // Fetch user data from Firestore
@@ -114,35 +151,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    const firebaseUser = result.user;
-    
-    // Check if user exists in Firestore
-    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-    
-    if (!userDoc.exists()) {
-      // Create new user document for first-time Google sign-in
-      await setDoc(doc(db, 'users', firebaseUser.uid), {
-        name: firebaseUser.displayName || '',
+    try {
+      // Try popup first
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
+      
+      // Check if user exists in Firestore
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      
+      if (!userDoc.exists()) {
+        // Create new user document for first-time Google sign-in
+        await setDoc(doc(db, 'users', firebaseUser.uid), {
+          name: firebaseUser.displayName || '',
+          email: firebaseUser.email,
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp(),
+          authProvider: 'google',
+        });
+      }
+      
+      // Store login event
+      await setDoc(doc(db, 'login', `${firebaseUser.uid}_${Date.now()}`), {
+        userId: firebaseUser.uid,
         email: firebaseUser.email,
-        createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp(),
+        loginAt: serverTimestamp(),
         authProvider: 'google',
       });
-    }
-    
-    // Store login event
-    await setDoc(doc(db, 'login', `${firebaseUser.uid}_${Date.now()}`), {
-      userId: firebaseUser.uid,
-      email: firebaseUser.email,
-      loginAt: serverTimestamp(),
-      authProvider: 'google',
-    });
 
-    // Update last login
-    await updateDoc(doc(db, 'users', firebaseUser.uid), {
-      lastLogin: serverTimestamp(),
-    }).catch(() => {});
+      // Update last login
+      await updateDoc(doc(db, 'users', firebaseUser.uid), {
+        lastLogin: serverTimestamp(),
+      }).catch(() => {});
+    } catch (error: any) {
+      // If popup is blocked or fails, fall back to redirect
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        throw error;
+      }
+    }
   };
 
   const signOut = async () => {

@@ -72,10 +72,18 @@ export default function SignIn() {
         description: "Welcome back to VaultNet!",
       });
       navigate('/marketplace');
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = "Failed to sign in with Google. Please try again.";
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "This domain is not authorized for Google Sign-In. Please contact the administrator.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Sign-in was cancelled. Please try again.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Network error. Please check your connection and try again.";
+      }
       toast({
         title: "Error",
-        description: "Failed to sign in with Google. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
