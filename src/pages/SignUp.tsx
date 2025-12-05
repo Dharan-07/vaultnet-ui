@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +31,17 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
+  <div className="flex items-center gap-2 text-sm">
+    {met ? (
+      <Check className="h-4 w-4 text-green-500" />
+    ) : (
+      <X className="h-4 w-4 text-muted-foreground" />
+    )}
+    <span className={met ? 'text-green-500' : 'text-muted-foreground'}>{text}</span>
+  </div>
+);
+
 export default function SignUp() {
   const [formData, setFormData] = useState({
     name: '',
@@ -46,6 +57,16 @@ export default function SignUp() {
   const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
+  const passwordRequirements = {
+    minLength: formData.password.length >= 8,
+    hasUppercase: /[A-Z]/.test(formData.password),
+    hasLowercase: /[a-z]/.test(formData.password),
+    hasNumber: /[0-9]/.test(formData.password),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password),
+  };
+
+  const allRequirementsMet = Object.values(passwordRequirements).every(Boolean);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
@@ -56,6 +77,15 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!allRequirementsMet) {
+      toast({
+        title: "Error",
+        description: "Please meet all password requirements",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Error",
@@ -132,7 +162,6 @@ export default function SignUp() {
                   id="name"
                   name="name"
                   type="text"
-                  placeholder="John Doe"
                   value={formData.name}
                   onChange={handleChange}
                   required
@@ -145,7 +174,6 @@ export default function SignUp() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="your.email@example.com"
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -159,7 +187,6 @@ export default function SignUp() {
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -173,6 +200,15 @@ export default function SignUp() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                {formData.password && (
+                  <div className="mt-2 space-y-1 p-3 bg-muted/50 rounded-md">
+                    <PasswordRequirement met={passwordRequirements.minLength} text="At least 8 characters" />
+                    <PasswordRequirement met={passwordRequirements.hasUppercase} text="One uppercase letter" />
+                    <PasswordRequirement met={passwordRequirements.hasLowercase} text="One lowercase letter" />
+                    <PasswordRequirement met={passwordRequirements.hasNumber} text="One number" />
+                    <PasswordRequirement met={passwordRequirements.hasSpecial} text="One special character" />
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -181,7 +217,6 @@ export default function SignUp() {
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
@@ -196,7 +231,7 @@ export default function SignUp() {
                   </button>
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !allRequirementsMet}>
                 {isLoading ? 'Creating account...' : 'Sign Up'}
               </Button>
               
