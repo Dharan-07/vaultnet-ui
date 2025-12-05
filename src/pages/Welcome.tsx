@@ -14,7 +14,7 @@ const Welcome = () => {
       <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
         {/* Logo/Icon */}
         <div className="flex justify-center mb-8">
-          <img src={Logo} alt="VaultNet Logo" className="w-24 h-24" />
+          <img src={Logo} alt="VaultNet Logo" className="w-40 h-40" />
         </div>
         
         {/* Website Name */}
