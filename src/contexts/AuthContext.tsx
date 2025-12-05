@@ -9,7 +9,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult
+  getRedirectResult,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -28,6 +29,7 @@ interface AuthContextType {
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   connectWallet: (walletAddress: string) => Promise<void>;
   disconnectWallet: () => Promise<void>;
   isLoading: boolean;
@@ -197,6 +199,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   };
 
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
   const connectWallet = async (walletAddress: string) => {
     if (!user) throw new Error('Must be logged in to connect wallet');
     
@@ -236,6 +242,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signUp,
     signInWithGoogle,
     signOut,
+    resetPassword,
     connectWallet,
     disconnectWallet,
     isLoading,
