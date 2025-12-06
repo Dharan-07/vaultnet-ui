@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,33 +52,32 @@ export const VotingButtons = ({ modelId, compact = false }: VotingButtonsProps) 
     loadVotes();
   }, [modelId, user]);
 
-  const handleDownvoteClick = () => {
+  const handleFeedbackClick = () => {
     if (!user) {
       toast({
         title: 'Sign in required',
-        description: 'Please sign in to vote on models',
+        description: 'Please sign in to provide feedback',
         variant: 'destructive',
       });
       return;
     }
 
-    // If already downvoted, toggle off without dialog
+    // If already gave feedback, toggle off without dialog
     if (userVote === 'down') {
       handleVote('down');
       return;
     }
 
-    // Show reason dialog for new downvote
+    // Show reason dialog for new feedback
     setSelectedReason('');
     setShowReasonDialog(true);
   };
 
-  const handleConfirmDownvote = async () => {
+  const handleConfirmFeedback = async () => {
     if (!selectedReason) {
       toast({
         title: 'Please select a reason',
-        description: 'Help us understand why you are downvoting this model',
-        variant: 'destructive',
+        description: 'Your feedback helps improve this model',
       });
       return;
     }
@@ -132,22 +131,22 @@ export const VotingButtons = ({ modelId, compact = false }: VotingButtonsProps) 
         }
 
         toast({
-          title: userVote === voteType ? 'Vote removed' : 'Vote recorded',
+          title: userVote === voteType ? 'Feedback removed' : (voteType === 'up' ? 'Thanks for your support!' : 'Thanks for your feedback!'),
           description: userVote === voteType 
-            ? 'Your vote has been removed' 
-            : `You ${voteType === 'up' ? 'upvoted' : 'downvoted'} this model`,
+            ? 'Your feedback has been removed' 
+            : voteType === 'up' ? 'Your vote helps others discover great models' : 'Your feedback helps improve this model',
         });
       } else {
         toast({
           title: 'Error',
-          description: result.error || 'Failed to record vote',
+          description: result.error || 'Failed to record feedback',
           variant: 'destructive',
         });
       }
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to record vote',
+        description: 'Failed to record feedback',
         variant: 'destructive',
       });
     } finally {
@@ -179,18 +178,18 @@ export const VotingButtons = ({ modelId, compact = false }: VotingButtonsProps) 
             <ThumbsUp className="w-3 h-3" />
           </Button>
           <span className={`text-sm font-medium min-w-[2rem] text-center ${
-            score > 0 ? 'text-green-500' : score < 0 ? 'text-red-500' : 'text-muted-foreground'
+            score > 0 ? 'text-green-500' : score < 0 ? 'text-amber-500' : 'text-muted-foreground'
           }`}>
             {score > 0 ? `+${score}` : score}
           </span>
           <Button
             size="icon"
-            variant={userVote === 'down' ? 'destructive' : 'ghost'}
-            className="h-7 w-7"
-            onClick={handleDownvoteClick}
+            variant={userVote === 'down' ? 'secondary' : 'ghost'}
+            className={`h-7 w-7 ${userVote === 'down' ? 'bg-amber-100 hover:bg-amber-200 text-amber-700' : ''}`}
+            onClick={handleFeedbackClick}
             disabled={isVoting}
           >
-            <ThumbsDown className="w-3 h-3" />
+            <MessageCircle className="w-3 h-3" />
           </Button>
         </div>
       ) : (
@@ -207,12 +206,12 @@ export const VotingButtons = ({ modelId, compact = false }: VotingButtonsProps) 
           </Button>
           <Button
             size="sm"
-            variant={userVote === 'down' ? 'destructive' : 'outline'}
-            onClick={handleDownvoteClick}
+            variant="outline"
+            onClick={handleFeedbackClick}
             disabled={isVoting}
-            className="gap-1"
+            className={`gap-1 ${userVote === 'down' ? 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100' : ''}`}
           >
-            <ThumbsDown className="w-4 h-4" />
+            <MessageCircle className="w-4 h-4" />
             <span>{downvotes}</span>
           </Button>
         </div>
@@ -221,9 +220,12 @@ export const VotingButtons = ({ modelId, compact = false }: VotingButtonsProps) 
       <Dialog open={showReasonDialog} onOpenChange={setShowReasonDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Why are you downvoting?</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              Help Us Improve
+            </DialogTitle>
             <DialogDescription>
-              Your feedback helps improve model quality
+              Your feedback makes this model better for everyone
             </DialogDescription>
           </DialogHeader>
           <RadioGroup
@@ -232,9 +234,9 @@ export const VotingButtons = ({ modelId, compact = false }: VotingButtonsProps) 
             className="gap-3 py-4"
           >
             {DOWNVOTE_REASONS.map((reason) => (
-              <div key={reason.id} className="flex items-center space-x-3">
+              <div key={reason.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                 <RadioGroupItem value={reason.id} id={reason.id} />
-                <Label htmlFor={reason.id} className="cursor-pointer">
+                <Label htmlFor={reason.id} className="cursor-pointer flex-1">
                   {reason.label}
                 </Label>
               </div>
@@ -244,8 +246,13 @@ export const VotingButtons = ({ modelId, compact = false }: VotingButtonsProps) 
             <Button variant="outline" onClick={() => setShowReasonDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleConfirmDownvote} disabled={!selectedReason}>
-              Submit
+            <Button 
+              onClick={handleConfirmFeedback} 
+              disabled={!selectedReason}
+              className="gap-1"
+            >
+              <Sparkles className="w-4 h-4" />
+              Submit Feedback
             </Button>
           </div>
         </DialogContent>
