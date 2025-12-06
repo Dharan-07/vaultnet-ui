@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Download, ShoppingCart, History, ExternalLink, Copy, Check } from 'lucide-react';
+import { Download, ShoppingCart, ExternalLink, Copy, Check } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { getModelById } from '@/data/mockData';
-import { buyModelAccess, hasAccess, getWalletAddress } from '@/lib/web3';
+import { buyModelAccess, getWalletAddress } from '@/lib/web3';
 import { downloadFromIPFS, getIPFSUrl } from '@/lib/ipfs';
+import { TrustScoreBadge } from '@/components/TrustScoreBadge';
+import { VotingButtons } from '@/components/VotingButtons';
 
 const ModelDetails = () => {
   const { id } = useParams();
@@ -250,8 +252,33 @@ const ModelDetails = () => {
             </Tabs>
           </div>
 
-          {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
+            {/* Trust Score Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Security & Trust</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TrustScoreBadge 
+                  modelId={model.id} 
+                  modelName={model.name} 
+                  cid={model.cid} 
+                  showDetails 
+                />
+              </CardContent>
+            </Card>
+
+            {/* Voting Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Community Rating</CardTitle>
+                <CardDescription>Vote to help others discover quality models</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <VotingButtons modelId={model.id} />
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Model Stats</CardTitle>
