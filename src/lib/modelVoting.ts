@@ -65,12 +65,25 @@ export const getUserVote = async (userId: string, modelId: number): Promise<'up'
   }
 };
 
+export const DOWNVOTE_REASONS = [
+  { id: 'inaccurate', label: 'Inaccurate or misleading results' },
+  { id: 'poor_quality', label: 'Poor model quality' },
+  { id: 'outdated', label: 'Outdated or deprecated' },
+  { id: 'security_concern', label: 'Security or safety concerns' },
+  { id: 'documentation', label: 'Poor documentation' },
+  { id: 'compatibility', label: 'Compatibility issues' },
+  { id: 'other', label: 'Other' },
+] as const;
+
+export type DownvoteReason = typeof DOWNVOTE_REASONS[number]['id'];
+
 // Vote on a model
 export const voteOnModel = async (
   userId: string,
   userEmail: string,
   modelId: number,
-  voteType: 'up' | 'down'
+  voteType: 'up' | 'down',
+  downvoteReason?: DownvoteReason
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     const userVoteRef = doc(db, 'user_votes', `${userId}_${modelId}`);
@@ -130,6 +143,7 @@ export const voteOnModel = async (
       userEmail,
       modelId,
       voteType,
+      ...(voteType === 'down' && downvoteReason ? { downvoteReason } : {}),
       votedAt: serverTimestamp(),
     });
     
