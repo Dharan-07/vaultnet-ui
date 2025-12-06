@@ -66,13 +66,13 @@ export const getUserVote = async (userId: string, modelId: number): Promise<'up'
 };
 
 export const DOWNVOTE_REASONS = [
-  { id: 'inaccurate', label: 'Inaccurate or misleading results' },
-  { id: 'poor_quality', label: 'Poor model quality' },
-  { id: 'outdated', label: 'Outdated or deprecated' },
-  { id: 'security_concern', label: 'Security or safety concerns' },
-  { id: 'documentation', label: 'Poor documentation' },
-  { id: 'compatibility', label: 'Compatibility issues' },
-  { id: 'other', label: 'Other' },
+  { id: 'inaccurate', label: '🎯 Could be more accurate' },
+  { id: 'poor_quality', label: '✨ Has room for improvement' },
+  { id: 'outdated', label: '🔄 Needs an update' },
+  { id: 'security_concern', label: '🛡️ Safety could be enhanced' },
+  { id: 'documentation', label: '📚 Documentation could help' },
+  { id: 'compatibility', label: '🔧 Compatibility suggestions' },
+  { id: 'other', label: '💡 Other suggestions' },
 ] as const;
 
 export type DownvoteReason = typeof DOWNVOTE_REASONS[number]['id'];
