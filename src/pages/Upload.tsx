@@ -82,7 +82,7 @@ const Upload = () => {
       });
       setUploadProgress(60);
 
-      const result = await uploadModel(formData.name, cid, formData.price);
+      const result = await uploadModel(cid, formData.price);
       setUploadProgress(90);
 
       if (result.success) {
