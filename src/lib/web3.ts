@@ -1,20 +1,60 @@
 import { ethers } from 'ethers';
 
-// Placeholder types for the smart contract
+// VaultNet Contract Configuration
+const CONTRACT_ADDRESS = '0x90DCb7bAA3c1D67eCF0B40B892D4198BC0c1E024';
+
+const CONTRACT_ABI = [
+  {
+    inputs: [{ internalType: 'string', name: 'cid', type: 'string' }, { internalType: 'uint256', name: 'price', type: 'uint256' }],
+    name: 'uploadModel',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'modelId', type: 'uint256' }],
+    name: 'buyModel',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function'
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'modelId', type: 'uint256' }, { internalType: 'string', name: 'newCid', type: 'string' }],
+    name: 'updateModel',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    name: 'models',
+    outputs: [
+      { internalType: 'address', name: 'uploader', type: 'address' },
+      { internalType: 'string', name: 'cid', type: 'string' },
+      { internalType: 'uint256', name: 'price', type: 'uint256' },
+      { internalType: 'uint256', name: 'version', type: 'uint256' },
+      { internalType: 'bool', name: 'exists', type: 'bool' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'modelCounter',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  }
+];
+
+// Types for the smart contract
 export interface ModelData {
   id: number;
-  name: string;
-  cid: string;
   uploader: string;
-  price: string;
-  timestamp: number;
-  versionCount: number;
-}
-
-export interface ModelVersion {
   cid: string;
-  timestamp: number;
-  versionNumber: number;
+  price: string;
+  version: number;
+  exists: boolean;
 }
 
 // Web3 connection state
@@ -22,23 +62,22 @@ let provider: ethers.BrowserProvider | null = null;
 let signer: ethers.Signer | null = null;
 let userAddress: string | null = null;
 
-/**
- * Connect to MetaMask wallet
- */
+function getContract(signerOrProvider: ethers.Signer | ethers.Provider) {
+  return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerOrProvider);
+}
+
 export async function connectWallet(): Promise<string> {
   try {
     if (!window.ethereum) {
       throw new Error('MetaMask is not installed. Please install MetaMask to use this dApp.');
     }
 
-    // Request account access
     await window.ethereum.request({ method: 'eth_requestAccounts' });
     
     provider = new ethers.BrowserProvider(window.ethereum);
     signer = await provider.getSigner();
     userAddress = await signer.getAddress();
 
-    // Check if we're on the correct network (Sepolia)
     const network = await provider.getNetwork();
     const SEPOLIA_CHAIN_ID = 11155111n;
     
@@ -53,16 +92,10 @@ export async function connectWallet(): Promise<string> {
   }
 }
 
-/**
- * Get the current connected wallet address
- */
 export function getWalletAddress(): string | null {
   return userAddress;
 }
 
-/**
- * Get wallet balance
- */
 export async function getBalance(): Promise<string> {
   if (!provider || !userAddress) {
     throw new Error('Wallet not connected');
@@ -72,113 +105,109 @@ export async function getBalance(): Promise<string> {
   return ethers.formatEther(balance);
 }
 
-/**
- * Upload a model to the contract
- * @param name - Model name
- * @param cid - IPFS CID of the model
- * @param price - Price in ETH
- */
 export async function uploadModel(
-  name: string,
   cid: string,
   price: string
-): Promise<{ success: boolean; txHash?: string; error?: string }> {
+): Promise<{ success: boolean; txHash?: string; modelId?: number; error?: string }> {
   try {
     if (!signer) {
       throw new Error('Wallet not connected');
     }
 
-    // TODO: Replace with actual contract address and ABI
-    // const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-    // const tx = await contract.uploadModel(name, cid, ethers.parseEther(price));
-    // await tx.wait();
+    const contract = getContract(signer);
+    const priceInWei = ethers.parseEther(price);
+    const tx = await contract.uploadModel(cid, priceInWei);
+    const receipt = await tx.wait();
     
-    console.log('uploadModel called:', { name, cid, price });
-    
-    // Placeholder response
+    // Get modelId from event logs
+    const modelId = receipt.logs[0]?.args?.[0];
+
     return {
       success: true,
-      txHash: '0x' + '0'.repeat(64), // Mock transaction hash
+      txHash: receipt.hash,
+      modelId: modelId ? Number(modelId) : undefined,
     };
   } catch (error: any) {
     console.error('Error uploading model:', error);
     return {
       success: false,
-      error: error.message || 'Failed to upload model',
+      error: error.reason || error.message || 'Failed to upload model',
     };
   }
 }
 
-/**
- * Get total number of models in the contract
- */
 export async function getModelCount(): Promise<number> {
   try {
-    // TODO: Replace with actual contract call
-    // const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-    // const count = await contract.getModelCount();
-    // return Number(count);
-    
-    console.log('getModelCount called');
-    return 0; // Placeholder
+    if (!provider) {
+      provider = new ethers.BrowserProvider(window.ethereum);
+    }
+    const contract = getContract(provider);
+    const count = await contract.modelCounter();
+    return Number(count);
   } catch (error) {
     console.error('Error getting model count:', error);
     return 0;
   }
 }
 
-/**
- * Get model data by index
- */
-export async function getModel(index: number): Promise<ModelData | null> {
+export async function getModel(modelId: number): Promise<ModelData | null> {
   try {
-    // TODO: Replace with actual contract call
-    // const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-    // const model = await contract.getModel(index);
+    if (!provider) {
+      provider = new ethers.BrowserProvider(window.ethereum);
+    }
+    const contract = getContract(provider);
+    const model = await contract.models(modelId);
     
-    console.log('getModel called:', index);
-    return null; // Placeholder
+    if (!model.exists) {
+      return null;
+    }
+
+    return {
+      id: modelId,
+      uploader: model.uploader,
+      cid: model.cid,
+      price: ethers.formatEther(model.price),
+      version: Number(model.version),
+      exists: model.exists,
+    };
   } catch (error) {
     console.error('Error getting model:', error);
     return null;
   }
 }
 
-/**
- * Buy access to a model
- */
 export async function buyModelAccess(
   modelId: number
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
   try {
-    if (!signer) {
+    if (!signer || !provider) {
       throw new Error('Wallet not connected');
     }
 
-    // TODO: Replace with actual contract call
-    // const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-    // const model = await contract.getModel(modelId);
-    // const tx = await contract.buyModelAccess(modelId, { value: model.price });
-    // await tx.wait();
+    const contract = getContract(provider);
+    const model = await contract.models(modelId);
     
-    console.log('buyModelAccess called:', modelId);
+    if (!model.exists) {
+      throw new Error('Model not found');
+    }
+
+    const contractWithSigner = getContract(signer);
+    const tx = await contractWithSigner.buyModel(modelId, { value: model.price });
+    const receipt = await tx.wait();
     
     return {
       success: true,
-      txHash: '0x' + '0'.repeat(64),
+      txHash: receipt.hash,
     };
   } catch (error: any) {
-    console.error('Error buying model access:', error);
+    console.error('Error buying model:', error);
     return {
       success: false,
-      error: error.message || 'Failed to buy model access',
+      error: error.reason || error.message || 'Failed to buy model',
     };
   }
 }
 
-/**
- * Update a model with a new version
- */
 export async function updateModel(
   modelId: number,
   newCid: string
@@ -188,66 +217,46 @@ export async function updateModel(
       throw new Error('Wallet not connected');
     }
 
-    // TODO: Replace with actual contract call
-    // const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-    // const tx = await contract.updateModel(modelId, newCid);
-    // await tx.wait();
-    
-    console.log('updateModel called:', { modelId, newCid });
+    const contract = getContract(signer);
+    const tx = await contract.updateModel(modelId, newCid);
+    const receipt = await tx.wait();
     
     return {
       success: true,
-      txHash: '0x' + '0'.repeat(64),
+      txHash: receipt.hash,
     };
   } catch (error: any) {
     console.error('Error updating model:', error);
     return {
       success: false,
-      error: error.message || 'Failed to update model',
+      error: error.reason || error.message || 'Failed to update model',
     };
   }
 }
 
-/**
- * Get all versions of a model
- */
-export async function getModelVersions(modelId: number): Promise<ModelVersion[]> {
+export async function getAllModels(): Promise<ModelData[]> {
   try {
-    // TODO: Replace with actual contract call
-    // const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-    // const versions = await contract.getModelVersions(modelId);
+    const count = await getModelCount();
+    const models: ModelData[] = [];
     
-    console.log('getModelVersions called:', modelId);
-    return []; // Placeholder
+    for (let i = 1; i <= count; i++) {
+      const model = await getModel(i);
+      if (model) {
+        models.push(model);
+      }
+    }
+    
+    return models;
   } catch (error) {
-    console.error('Error getting model versions:', error);
+    console.error('Error getting all models:', error);
     return [];
   }
 }
 
-/**
- * Check if user has access to a model
- */
-export async function hasAccess(userAddr: string, modelId: number): Promise<boolean> {
-  try {
-    // TODO: Replace with actual contract call
-    // const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-    // const access = await contract.hasAccess(userAddr, modelId);
-    // return access;
-    
-    console.log('hasAccess called:', { userAddr, modelId });
-    return false; // Placeholder
-  } catch (error) {
-    console.error('Error checking access:', error);
-    return false;
-  }
-}
-
 // Listen for account changes
-if (window.ethereum) {
+if (typeof window !== 'undefined' && window.ethereum) {
   window.ethereum.on('accountsChanged', (accounts: string[]) => {
     if (accounts.length === 0) {
-      // User disconnected wallet
       userAddress = null;
       signer = null;
     } else {
@@ -257,12 +266,10 @@ if (window.ethereum) {
   });
 
   window.ethereum.on('chainChanged', () => {
-    // Reload the page when chain changes
     window.location.reload();
   });
 }
 
-// Extend Window interface for ethereum
 declare global {
   interface Window {
     ethereum?: any;
