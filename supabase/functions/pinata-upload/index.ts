@@ -15,25 +15,39 @@ serve(async (req) => {
     const PINATA_SECRET_KEY = Deno.env.get("PINATA_SECRET_KEY");
 
     if (!PINATA_API_KEY || !PINATA_SECRET_KEY) {
+      console.error("Pinata API keys not configured");
       throw new Error("Pinata API keys not configured");
     }
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    
-    if (!file) {
-      throw new Error("No file provided");
+    const body = await req.json();
+    const { fileData, fileName, fileType } = body;
+
+    if (!fileData || !fileName) {
+      throw new Error("Missing fileData or fileName");
     }
+
+    console.log(`Uploading file: ${fileName}, type: ${fileType}`);
+
+    // Decode base64 to binary
+    const binaryString = atob(fileData);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // Create a Blob from the binary data
+    const blob = new Blob([bytes], { type: fileType || "application/octet-stream" });
 
     // Create form data for Pinata
     const pinataFormData = new FormData();
-    pinataFormData.append("file", file);
+    pinataFormData.append("file", blob, fileName);
+    
+    // Add metadata
+    pinataFormData.append("pinataMetadata", JSON.stringify({
+      name: fileName,
+    }));
 
-    // Optional: Add metadata
-    const metadata = formData.get("metadata");
-    if (metadata) {
-      pinataFormData.append("pinataMetadata", metadata);
-    }
+    console.log("Sending to Pinata...");
 
     // Upload to Pinata
     const response = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
@@ -47,10 +61,12 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("Pinata error:", errorText);
       throw new Error(`Pinata upload failed: ${errorText}`);
     }
 
     const result = await response.json();
+    console.log("Pinata upload successful:", result.IpfsHash);
 
     return new Response(
       JSON.stringify({
