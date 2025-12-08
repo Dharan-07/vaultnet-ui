@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
+import authBackground from '@/assets/auth-background.jpg';
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18">
     <path
@@ -141,8 +141,17 @@ export default function SignIn() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 flex items-center justify-center px-4 py-12 bg-gradient-to-br from-background via-background to-primary/5">
-        <Card className="w-full max-w-md">
+      <main 
+        className="flex-1 flex items-center justify-center px-4 py-12 relative"
+        style={{
+          backgroundImage: `url(${authBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+        <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
             <CardDescription className="text-center">
