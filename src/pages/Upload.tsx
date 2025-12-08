@@ -79,9 +79,15 @@ const Upload = () => {
       });
       setUploadProgress(10);
 
-      const fileCid = await uploadFileToIPFS(formData.file);
-      setUploadProgress(30);
-      console.log('Model file uploaded to IPFS:', fileCid);
+      let fileCid: string;
+      try {
+        fileCid = await uploadFileToIPFS(formData.file);
+        setUploadProgress(30);
+        console.log('Model file uploaded to IPFS:', fileCid);
+      } catch (ipfsError: any) {
+        const errorMsg = ipfsError.message || 'Unknown IPFS error';
+        throw new Error(`IPFS Upload Failed: ${errorMsg}. Please check that Pinata API keys are configured correctly.`);
+      }
 
       // Step 2: Create and upload metadata to IPFS
       setUploadStep('Uploading metadata to IPFS...');
@@ -104,9 +110,15 @@ const Upload = () => {
         fileCid: fileCid, // Reference to the actual model file
       };
 
-      const metadataCid = await uploadMetadataToIPFS(metadata);
-      setUploadProgress(60);
-      console.log('Metadata uploaded to IPFS:', metadataCid);
+      let metadataCid: string;
+      try {
+        metadataCid = await uploadMetadataToIPFS(metadata);
+        setUploadProgress(60);
+        console.log('Metadata uploaded to IPFS:', metadataCid);
+      } catch (metaError: any) {
+        const errorMsg = metaError.message || 'Unknown metadata error';
+        throw new Error(`Metadata Upload Failed: ${errorMsg}. The model file was uploaded but metadata storage failed.`);
+      }
 
       // Step 3: Store on blockchain
       setUploadStep('Recording on blockchain...');
@@ -132,13 +144,22 @@ const Upload = () => {
           navigate('/dashboard');
         }, 2000);
       } else {
-        throw new Error(result.error || 'Upload failed');
+        // Parse blockchain-specific errors
+        let blockchainError = result.error || 'Transaction failed';
+        if (blockchainError.includes('user rejected')) {
+          blockchainError = 'Transaction Rejected: You cancelled the transaction in MetaMask.';
+        } else if (blockchainError.includes('insufficient funds')) {
+          blockchainError = 'Insufficient Funds: Your wallet does not have enough ETH to cover gas fees.';
+        } else if (blockchainError.includes('nonce')) {
+          blockchainError = 'Transaction Error: Please reset your MetaMask transaction nonce or try again.';
+        }
+        throw new Error(blockchainError);
       }
     } catch (error: any) {
       console.error('Upload error:', error);
       toast({
         title: 'Upload Failed',
-        description: error.message || 'Failed to upload model',
+        description: error.message || 'An unexpected error occurred during upload',
         variant: 'destructive',
       });
       setUploadProgress(0);

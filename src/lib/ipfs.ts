@@ -41,18 +41,29 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
 
     if (error) {
       console.error("Supabase function error:", error);
-      throw new Error(error.message);
+      if (error.message?.includes('non-2xx')) {
+        throw new Error("Pinata API error - check if API keys are valid");
+      }
+      throw new Error(error.message || "Edge function call failed");
+    }
+
+    if (!data) {
+      throw new Error("No response from upload service");
     }
 
     if (!data.success) {
-      throw new Error(data.error || "Failed to upload to IPFS");
+      const errMsg = data.error || "Unknown upload error";
+      if (errMsg.includes('not configured')) {
+        throw new Error("Pinata API keys not configured - please add PINATA_API_KEY and PINATA_SECRET_KEY");
+      }
+      throw new Error(errMsg);
     }
 
     console.log("File uploaded to IPFS:", data.cid);
     return data.cid;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error uploading to IPFS:", error);
-    throw new Error("Failed to upload file to IPFS");
+    throw new Error(error.message || "Failed to upload file to IPFS");
   }
 }
 
@@ -74,18 +85,29 @@ export async function uploadMetadataToIPFS(metadata: ModelMetadata): Promise<str
 
     if (error) {
       console.error("Supabase function error:", error);
-      throw new Error(error.message);
+      if (error.message?.includes('non-2xx')) {
+        throw new Error("Pinata API error - check if API keys are valid");
+      }
+      throw new Error(error.message || "Edge function call failed");
+    }
+
+    if (!data) {
+      throw new Error("No response from upload service");
     }
 
     if (!data.success) {
-      throw new Error(data.error || "Failed to upload metadata to IPFS");
+      const errMsg = data.error || "Unknown upload error";
+      if (errMsg.includes('not configured')) {
+        throw new Error("Pinata API keys not configured");
+      }
+      throw new Error(errMsg);
     }
 
     console.log("Metadata uploaded to IPFS:", data.cid);
     return data.cid;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error uploading metadata to IPFS:", error);
-    throw new Error("Failed to upload metadata to IPFS");
+    throw new Error(error.message || "Failed to upload metadata to IPFS");
   }
 }
 
