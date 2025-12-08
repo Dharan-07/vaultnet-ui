@@ -11,21 +11,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { getWalletAddress, uploadModel } from '@/lib/web3';
-import { uploadFileToIPFS } from '@/lib/ipfs';
+import { uploadFileToIPFS, uploadMetadataToIPFS, ModelMetadata } from '@/lib/ipfs';
 import { getCategories } from '@/data/mockData';
 
 const Upload = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStep, setUploadStep] = useState('');
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: '',
     price: '',
+    tags: '',
+    version: '1.0.0',
+    license: 'MIT',
     file: null as File | null,
   });
 
@@ -65,47 +71,78 @@ const Upload = () => {
     setUploadProgress(0);
 
     try {
-      // Step 1: Upload to IPFS (33%)
+      // Step 1: Upload model file to IPFS
+      setUploadStep('Uploading model file to IPFS...');
       toast({
-        title: 'Uploading to IPFS',
-        description: 'Please wait while your model is uploaded...',
+        title: 'Step 1/3: Uploading Model File',
+        description: 'Uploading your model to IPFS...',
       });
       setUploadProgress(10);
 
-      const cid = await uploadFileToIPFS(formData.file);
+      const fileCid = await uploadFileToIPFS(formData.file);
+      setUploadProgress(30);
+      console.log('Model file uploaded to IPFS:', fileCid);
+
+      // Step 2: Create and upload metadata to IPFS
+      setUploadStep('Uploading metadata to IPFS...');
+      toast({
+        title: 'Step 2/3: Uploading Metadata',
+        description: 'Storing model metadata on IPFS...',
+      });
       setUploadProgress(40);
 
-      // Step 2: Store on blockchain (66%)
+      const metadata: ModelMetadata = {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        version: formData.version,
+        author: user?.name || walletAddress,
+        license: formData.license,
+        fileSize: `${(formData.file.size / 1024 / 1024).toFixed(2)} MB`,
+        uploadDate: new Date().toISOString(),
+        fileCid: fileCid, // Reference to the actual model file
+      };
+
+      const metadataCid = await uploadMetadataToIPFS(metadata);
+      setUploadProgress(60);
+      console.log('Metadata uploaded to IPFS:', metadataCid);
+
+      // Step 3: Store on blockchain
+      setUploadStep('Recording on blockchain...');
       toast({
-        title: 'Storing on Blockchain',
+        title: 'Step 3/3: Blockchain Transaction',
         description: 'Please confirm the transaction in your wallet...',
       });
-      setUploadProgress(60);
+      setUploadProgress(70);
 
-      const result = await uploadModel(cid, formData.price);
+      const result = await uploadModel(metadataCid, formData.price);
       setUploadProgress(90);
 
       if (result.success) {
         setUploadProgress(100);
+        setUploadStep('Upload complete!');
         toast({
           title: 'Upload Successful!',
-          description: 'Your model has been uploaded to VaultNet',
+          description: `Model ID: ${result.modelId} | TX: ${result.txHash?.slice(0, 10)}...`,
         });
         
         // Redirect to dashboard after a short delay
         setTimeout(() => {
           navigate('/dashboard');
-        }, 1500);
+        }, 2000);
       } else {
         throw new Error(result.error || 'Upload failed');
       }
     } catch (error: any) {
+      console.error('Upload error:', error);
       toast({
         title: 'Upload Failed',
         description: error.message || 'Failed to upload model',
         variant: 'destructive',
       });
       setUploadProgress(0);
+      setUploadStep('');
     } finally {
       setIsUploading(false);
     }
@@ -158,44 +195,88 @@ const Upload = () => {
                   />
                 </div>
 
-                {/* Category */}
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                    disabled={isUploading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(cat => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Category and Version Row */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category *</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                      disabled={isUploading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(cat => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="version">Version</Label>
+                    <Input
+                      id="version"
+                      placeholder="1.0.0"
+                      value={formData.version}
+                      onChange={(e) => setFormData(prev => ({ ...prev, version: e.target.value }))}
+                      disabled={isUploading}
+                    />
+                  </div>
                 </div>
 
-                {/* Price */}
+                {/* Tags */}
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price (ETH) *</Label>
+                  <Label htmlFor="tags">Tags (comma-separated)</Label>
                   <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.5"
-                    value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    id="tags"
+                    placeholder="e.g., NLP, transformer, text-generation"
+                    value={formData.tags}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
                     disabled={isUploading}
                   />
-                  <p className="text-sm text-muted-foreground">
-                    Set the price users will pay to access your model
-                  </p>
+                </div>
+
+                {/* Price and License Row */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price (ETH) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      placeholder="0.05"
+                      value={formData.price}
+                      onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                      disabled={isUploading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="license">License</Label>
+                    <Select
+                      value={formData.license}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, license: value }))}
+                      disabled={isUploading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select license" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MIT">MIT</SelectItem>
+                        <SelectItem value="Apache-2.0">Apache 2.0</SelectItem>
+                        <SelectItem value="GPL-3.0">GPL 3.0</SelectItem>
+                        <SelectItem value="BSD-3">BSD 3-Clause</SelectItem>
+                        <SelectItem value="Proprietary">Proprietary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* File Upload */}
@@ -229,7 +310,7 @@ const Upload = () => {
                 {isUploading && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span>Upload Progress</span>
+                      <span>{uploadStep}</span>
                       <span>{uploadProgress}%</span>
                     </div>
                     <Progress value={uploadProgress} />
@@ -246,7 +327,7 @@ const Upload = () => {
                   {isUploading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Uploading...
+                      {uploadStep || 'Uploading...'}
                     </>
                   ) : (
                     <>
@@ -267,7 +348,7 @@ const Upload = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Your model will be stored on IPFS (InterPlanetary File System), ensuring decentralized and permanent storage.
+                  Your model file and metadata are stored on IPFS via Pinata, ensuring decentralized and permanent storage with content addressing.
                 </p>
               </CardContent>
             </Card>
@@ -278,7 +359,7 @@ const Upload = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Model metadata and access control are managed by smart contracts on the Ethereum blockchain.
+                  The metadata CID and pricing are recorded on the Sepolia blockchain, enabling trustless purchases and ownership verification.
                 </p>
               </CardContent>
             </Card>

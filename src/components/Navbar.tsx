@@ -83,6 +83,19 @@ export const Navbar = () => {
                       <div className="text-xs text-muted-foreground">{user?.email}</div>
                     </div>
                     <DropdownMenuSeparator />
+                    <Link to="/profile">
+                      <DropdownMenuItem className="gap-2 cursor-pointer">
+                        <User className="w-4 h-4" />
+                        Profile
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link to="/dashboard">
+                      <DropdownMenuItem className="gap-2 cursor-pointer">
+                        <LayoutDashboard className="w-4 h-4" />
+                        Dashboard
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="gap-2 cursor-pointer text-destructive">
                       <LogOut className="w-4 h-4" />
                       Sign Out

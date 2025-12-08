@@ -14,6 +14,7 @@ export interface ModelMetadata {
   license: string;
   fileSize: string;
   uploadDate: string;
+  fileCid?: string; // CID of the actual model file
 }
 
 /**
@@ -21,17 +22,25 @@ export interface ModelMetadata {
  */
 export async function uploadFileToIPFS(file: File): Promise<string> {
   try {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("pinataMetadata", JSON.stringify({
-      name: file.name,
-    }));
+    // Convert file to base64
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(arrayBuffer).reduce(
+        (data, byte) => data + String.fromCharCode(byte),
+        ''
+      )
+    );
 
     const { data, error } = await supabase.functions.invoke("pinata-upload", {
-      body: formData,
+      body: {
+        fileData: base64,
+        fileName: file.name,
+        fileType: file.type,
+      },
     });
 
     if (error) {
+      console.error("Supabase function error:", error);
       throw new Error(error.message);
     }
 
@@ -52,10 +61,28 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
  */
 export async function uploadMetadataToIPFS(metadata: ModelMetadata): Promise<string> {
   try {
-    const metadataBlob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
-    const metadataFile = new File([metadataBlob], "metadata.json");
-    
-    return await uploadFileToIPFS(metadataFile);
+    const metadataJson = JSON.stringify(metadata, null, 2);
+    const base64 = btoa(unescape(encodeURIComponent(metadataJson)));
+
+    const { data, error } = await supabase.functions.invoke("pinata-upload", {
+      body: {
+        fileData: base64,
+        fileName: "metadata.json",
+        fileType: "application/json",
+      },
+    });
+
+    if (error) {
+      console.error("Supabase function error:", error);
+      throw new Error(error.message);
+    }
+
+    if (!data.success) {
+      throw new Error(data.error || "Failed to upload metadata to IPFS");
+    }
+
+    console.log("Metadata uploaded to IPFS:", data.cid);
+    return data.cid;
   } catch (error) {
     console.error("Error uploading metadata to IPFS:", error);
     throw new Error("Failed to upload metadata to IPFS");
@@ -82,10 +109,18 @@ export function getPublicIPFSUrl(cid: string): string {
  */
 export async function fetchMetadataFromIPFS(cid: string): Promise<ModelMetadata | null> {
   try {
-    const response = await fetch(getIPFSUrl(cid));
+    // Try Pinata gateway first
+    let response = await fetch(getIPFSUrl(cid));
+    
+    // Fallback to public gateway
+    if (!response.ok) {
+      response = await fetch(getPublicIPFSUrl(cid));
+    }
+    
     if (!response.ok) {
       throw new Error("Failed to fetch from IPFS");
     }
+    
     const metadata = await response.json();
     return metadata as ModelMetadata;
   } catch (error) {
@@ -101,16 +136,27 @@ export async function downloadFromIPFS(cid: string, filename: string): Promise<v
   try {
     const url = getIPFSUrl(cid);
     
+    // Fetch the file
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch file from IPFS");
+    }
+    
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    
     // Create a temporary link and trigger download
     const link = document.createElement("a");
-    link.href = url;
+    link.href = downloadUrl;
     link.download = filename;
-    link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    console.log("Downloading from IPFS:", cid);
+    // Cleanup
+    window.URL.revokeObjectURL(downloadUrl);
+    
+    console.log("Downloaded from IPFS:", cid);
   } catch (error) {
     console.error("Error downloading from IPFS:", error);
     throw new Error("Failed to download file from IPFS");
