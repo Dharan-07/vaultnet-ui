@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Download, ShoppingCart, ExternalLink, Copy, Check } from 'lucide-react';
+import { Download, ShoppingCart, ExternalLink, Copy, Check, Loader2, LinkIcon } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -9,10 +9,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { getModelById } from '@/data/mockData';
-import { buyModelAccess, getWalletAddress } from '@/lib/web3';
-import { downloadFromIPFS, getIPFSUrl } from '@/lib/ipfs';
+import { buyModelAccess, getWalletAddress, getModel, ModelData } from '@/lib/web3';
+import { downloadFromIPFS, getIPFSUrl, fetchMetadataFromIPFS } from '@/lib/ipfs';
 import { TrustScoreBadge } from '@/components/TrustScoreBadge';
 import { VotingButtons } from '@/components/VotingButtons';
+
+interface DisplayModel {
+  id: number;
+  name: string;
+  description: string;
+  uploader: string;
+  price: string;
+  cid: string;
+  versionCount: number;
+  downloads: number;
+  category: string;
+  uploadDate: string;
+  tags: string[];
+  onChain: boolean;
+}
 
 const ModelDetails = () => {
   const { id } = useParams();
@@ -20,8 +35,65 @@ const ModelDetails = () => {
   const [isBuying, setIsBuying] = useState(false);
   const [copiedCid, setCopiedCid] = useState(false);
   const [hasModelAccess, setHasModelAccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [model, setModel] = useState<DisplayModel | null>(null);
 
-  const model = getModelById(Number(id));
+  useEffect(() => {
+    const fetchModel = async () => {
+      setLoading(true);
+      const modelId = Number(id);
+      
+      // First try to get from on-chain
+      try {
+        const onChainModel = await getModel(modelId);
+        if (onChainModel) {
+          // Try to fetch metadata from IPFS
+          const metadata = await fetchMetadataFromIPFS(onChainModel.cid).catch(() => null);
+          
+          setModel({
+            id: onChainModel.id,
+            name: metadata?.name || `Model #${onChainModel.id}`,
+            description: metadata?.description || "On-chain AI model stored on IPFS",
+            uploader: onChainModel.uploader,
+            price: onChainModel.price,
+            cid: onChainModel.cid,
+            versionCount: onChainModel.version,
+            downloads: 0,
+            category: metadata?.category || "AI/ML",
+            uploadDate: metadata?.uploadDate || new Date().toISOString(),
+            tags: metadata?.tags || ["on-chain", "verified", "ipfs"],
+            onChain: true,
+          });
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.log("Model not found on-chain, checking mock data");
+      }
+      
+      // Fall back to mock data
+      const mockModel = getModelById(modelId);
+      if (mockModel) {
+        setModel({ ...mockModel, onChain: false });
+      }
+      setLoading(false);
+    };
+
+    fetchModel();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="ml-3">Loading model...</span>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!model) {
     return (
@@ -42,9 +114,8 @@ const ModelDetails = () => {
   }
 
   const mockVersions = [
-    { version: 'v3.0.0', cid: model.cid, date: model.uploadDate, changes: 'Latest stable release with performance improvements' },
-    { version: 'v2.1.0', cid: 'QmPreviousCID...', date: '2024-01-10', changes: 'Bug fixes and minor updates' },
-    { version: 'v2.0.0', cid: 'QmOlderCID...', date: '2023-12-15', changes: 'Major architecture update' },
+    { version: `v${model.versionCount}.0.0`, cid: model.cid, date: model.uploadDate, changes: 'Latest stable release' },
+    ...(model.versionCount > 1 ? [{ version: `v${model.versionCount - 1}.0.0`, cid: 'QmPreviousCID...', date: '2024-01-10', changes: 'Previous version' }] : []),
   ];
 
   const handleBuyAccess = async () => {
@@ -65,7 +136,7 @@ const ModelDetails = () => {
         setHasModelAccess(true);
         toast({
           title: 'Purchase Successful!',
-          description: `You now have access to ${model.name}`,
+          description: `You now have access to ${model.name}. Transaction: ${result.txHash?.slice(0, 10)}...`,
         });
       } else {
         toast({
@@ -86,7 +157,7 @@ const ModelDetails = () => {
   };
 
   const handleDownload = async () => {
-    if (!hasModelAccess) {
+    if (!hasModelAccess && model.onChain) {
       toast({
         title: 'Access Required',
         description: 'Please purchase access to download this model',
@@ -136,6 +207,12 @@ const ModelDetails = () => {
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-4xl font-bold">{model.name}</h1>
                 <Badge>{model.category}</Badge>
+                {model.onChain && (
+                  <Badge variant="secondary" className="gap-1">
+                    <LinkIcon className="w-3 h-3" />
+                    On-Chain
+                  </Badge>
+                )}
               </div>
               <p className="text-muted-foreground">
                 by <span className="font-mono">{formatAddress(model.uploader)}</span>
@@ -156,10 +233,17 @@ const ModelDetails = () => {
           </div>
 
           <div className="flex gap-3">
-            <Button size="lg" onClick={handleBuyAccess} disabled={isBuying || hasModelAccess} className="gap-2">
-              <ShoppingCart className="w-5 h-5" />
-              {hasModelAccess ? 'Access Granted' : isBuying ? 'Processing...' : 'Buy Access'}
-            </Button>
+            {model.onChain ? (
+              <Button size="lg" onClick={handleBuyAccess} disabled={isBuying || hasModelAccess} className="gap-2">
+                <ShoppingCart className="w-5 h-5" />
+                {hasModelAccess ? 'Access Granted' : isBuying ? 'Processing...' : `Buy Access (${model.price} ETH)`}
+              </Button>
+            ) : (
+              <Button size="lg" disabled className="gap-2">
+                <ShoppingCart className="w-5 h-5" />
+                Demo Model
+              </Button>
+            )}
             <Button size="lg" variant="secondary" onClick={handleDownload} className="gap-2">
               <Download className="w-5 h-5" />
               Download
@@ -189,7 +273,7 @@ const ModelDetails = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle>IPFS Information</CardTitle>
-                    <CardDescription>Model stored on IPFS</CardDescription>
+                    <CardDescription>Model stored on IPFS via Pinata</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
@@ -299,6 +383,10 @@ const ModelDetails = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Price</span>
                   <span className="font-semibold text-primary">{model.price} ETH</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Storage</span>
+                  <Badge variant="outline">{model.onChain ? 'On-Chain + IPFS' : 'IPFS'}</Badge>
                 </div>
               </CardContent>
             </Card>

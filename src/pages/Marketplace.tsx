@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Filter } from 'lucide-react';
+import { Filter, Loader2, RefreshCw, Link as LinkIcon } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { SearchBar } from '@/components/SearchBar';
 import { ModelCard } from '@/components/ModelCard';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { useOnChainModels, OnChainModel } from '@/hooks/useOnChainModels';
 import { mockModels, filterModels, getCategories } from '@/data/mockData';
 
 const Marketplace = () => {
@@ -17,15 +19,27 @@ const Marketplace = () => {
   const [category, setCategory] = useState<string>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1]);
   const [sortBy, setSortBy] = useState<string>('downloads');
+  const [showOnChainOnly, setShowOnChainOnly] = useState(false);
+  
+  const { models: onChainModels, loading, error, refetch } = useOnChainModels();
   
   const categories = getCategories();
 
-  const filteredModels = filterModels(mockModels, {
+  // Combine mock models with on-chain models
+  const allModels: OnChainModel[] = [
+    ...onChainModels,
+    ...mockModels.map(m => ({ ...m, onChain: false }))
+  ];
+
+  // Filter models
+  const displayModels = showOnChainOnly ? onChainModels : allModels;
+
+  const filteredModels = filterModels(displayModels, {
     category: category === 'all' ? undefined : category,
     minPrice: priceRange[0],
     maxPrice: priceRange[1],
     search: searchQuery,
-  });
+  }) as OnChainModel[];
 
   const sortedModels = [...filteredModels].sort((a, b) => {
     switch (sortBy) {
@@ -58,7 +72,30 @@ const Marketplace = () => {
       {/* Search Header */}
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-6">Model Marketplace</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">Model Marketplace</h1>
+            <div className="flex items-center gap-3">
+              <Button
+                variant={showOnChainOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowOnChainOnly(!showOnChainOnly)}
+                className="gap-2"
+              >
+                <LinkIcon className="w-4 h-4" />
+                On-Chain Only
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={refetch}
+                disabled={loading}
+                className="gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+          </div>
           <SearchBar onSearch={handleSearch} placeholder="Search models..." />
         </div>
       </div>
@@ -134,6 +171,7 @@ const Marketplace = () => {
                     setCategory('all');
                     setPriceRange([0, 1]);
                     setSearchQuery('');
+                    setShowOnChainOnly(false);
                   }}
                 >
                   Reset Filters
@@ -144,16 +182,43 @@ const Marketplace = () => {
 
           {/* Models Grid */}
           <main className="lg:col-span-3">
-            <div className="mb-6">
+            <div className="mb-6 flex items-center justify-between">
               <p className="text-muted-foreground">
                 Showing {sortedModels.length} model{sortedModels.length !== 1 ? 's' : ''}
+                {showOnChainOnly && ' (on-chain only)'}
               </p>
+              {onChainModels.length > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <LinkIcon className="w-3 h-3" />
+                  {onChainModels.length} on-chain
+                </Badge>
+              )}
             </div>
 
-            {sortedModels.length > 0 ? (
+            {loading && onChainModels.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <span className="ml-3 text-muted-foreground">Loading on-chain models...</span>
+              </div>
+            ) : error && onChainModels.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-destructive mb-4">{error}</p>
+                <Button variant="outline" onClick={refetch}>
+                  Try Again
+                </Button>
+              </div>
+            ) : sortedModels.length > 0 ? (
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {sortedModels.map(model => (
-                  <ModelCard key={model.id} model={model} />
+                  <div key={`${model.onChain ? 'chain' : 'mock'}-${model.id}`} className="relative">
+                    {model.onChain && (
+                      <Badge className="absolute top-2 right-2 z-10 bg-primary/90">
+                        <LinkIcon className="w-3 h-3 mr-1" />
+                        On-Chain
+                      </Badge>
+                    )}
+                    <ModelCard model={model} />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -168,6 +233,7 @@ const Marketplace = () => {
                     setCategory('all');
                     setPriceRange([0, 1]);
                     setSearchQuery('');
+                    setShowOnChainOnly(false);
                   }}
                 >
                   Clear Filters
