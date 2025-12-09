@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Wallet, Mail, Calendar, Shield, ExternalLink, Copy, Check } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -20,6 +20,12 @@ const Profile = () => {
   const [balance, setBalance] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [hoveredStat, setHoveredStat] = useState<number | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
 
   const handleConnectWallet = async () => {
     setIsConnecting(true);
@@ -92,7 +98,7 @@ const Profile = () => {
 
       <div className="container mx-auto px-4 py-8 flex-1">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
+          <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
             <h1 className="text-4xl font-bold mb-2">My Profile</h1>
             <p className="text-muted-foreground">
               Manage your account and wallet connection
@@ -101,7 +107,9 @@ const Profile = () => {
 
           <div className="grid md:grid-cols-3 gap-6">
             {/* Profile Card */}
-            <Card className="md:col-span-2">
+            <Card className={`md:col-span-2 transition-all duration-1000 delay-100 hover:shadow-lg hover:-translate-y-1 cursor-default ${
+              isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+            }`}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="w-5 h-5" />
@@ -150,28 +158,39 @@ const Profile = () => {
             </Card>
 
             {/* Stats Card */}
-            <Card>
+            <Card className={`transition-all duration-1000 delay-200 hover:shadow-lg hover:-translate-y-1 ${
+              isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+            }`}>
               <CardHeader>
                 <CardTitle>Your Stats</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <p className="text-3xl font-bold">{myModels.length}</p>
-                  <p className="text-sm text-muted-foreground">Models Uploaded</p>
-                </div>
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <p className="text-3xl font-bold">{totalValue.toFixed(3)}</p>
-                  <p className="text-sm text-muted-foreground">Total Value (ETH)</p>
-                </div>
-                <div className="text-center p-4 bg-muted/50 rounded-lg">
-                  <p className="text-3xl font-bold">{models.length}</p>
-                  <p className="text-sm text-muted-foreground">On-Chain Models</p>
-                </div>
+                {[
+                  { value: myModels.length, label: 'Models Uploaded' },
+                  { value: totalValue.toFixed(3), label: 'Total Value (ETH)' },
+                  { value: models.length, label: 'On-Chain Models' },
+                ].map((stat, idx) => (
+                  <div
+                    key={idx}
+                    className="text-center p-4 bg-muted/50 rounded-lg cursor-pointer transition-all duration-300 hover:bg-muted hover:shadow-md hover:scale-105"
+                    onMouseEnter={() => setHoveredStat(idx)}
+                    onMouseLeave={() => setHoveredStat(null)}
+                  >
+                    <p className={`transition-all duration-300 ${
+                      hoveredStat === idx ? 'text-3xl font-bold text-primary' : 'text-3xl font-bold'
+                    }`}>
+                      {stat.value}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  </div>
+                ))}
               </CardContent>
             </Card>
 
             {/* Wallet Card */}
-            <Card className="md:col-span-3">
+            <Card className={`md:col-span-3 transition-all duration-1000 delay-300 hover:shadow-lg hover:-translate-y-1 ${
+              isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+            }`}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Wallet className="w-5 h-5" />
@@ -252,7 +271,9 @@ const Profile = () => {
             </Card>
 
             {/* Network Info */}
-            <Card className="md:col-span-3">
+            <Card className={`md:col-span-3 transition-all duration-1000 delay-400 hover:shadow-lg hover:-translate-y-1 ${
+              isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+            }`}>
               <CardHeader>
                 <CardTitle>Network Information</CardTitle>
               </CardHeader>
