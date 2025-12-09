@@ -146,25 +146,18 @@ export default function SignUp() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main 
-        className="flex-1 flex items-center justify-center px-4 py-12 relative"
-        style={{
-          backgroundImage: `url(${authBackground})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-        <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
-            <CardDescription className="text-center">
-              Sign up to start sharing and accessing AI models
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-6xl flex flex-col md:flex-row items-center gap-8">
+          <div className="w-full md:w-1/2 flex items-center justify-center h-[600px]">
+            <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl h-full flex flex-col">
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
+                <CardDescription className="text-center">
+                  Sign up to start sharing and accessing AI models
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <form onSubmit={handleSubmit} className="space-y-4 h-full">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input
@@ -264,16 +257,27 @@ export default function SignUp() {
                 {isGoogleLoading ? 'Signing up...' : 'Sign up with Google'}
               </Button>
             </form>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-2">
-            <div className="text-sm text-muted-foreground text-center">
-              Already have an account?{' '}
-              <Link to="/signin" className="text-primary hover:underline font-medium">
-                Sign in
-              </Link>
-            </div>
-          </CardFooter>
-        </Card>
+              </CardContent>
+              <CardFooter className="flex flex-col space-y-2">
+                <div className="text-sm text-muted-foreground text-center">
+                  Already have an account?{' '}
+                  <Link to="/signin" className="text-primary hover:underline font-medium">
+                    Sign in
+                  </Link>
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
+
+          <div className="hidden md:block md:w-1/2 h-[600px] rounded-lg overflow-hidden relative">
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${authBackground})`,
+              }}
+            />
+          </div>
+        </div>
       </main>
       <Footer />
     </div>

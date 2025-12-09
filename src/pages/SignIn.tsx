@@ -141,25 +141,18 @@ export default function SignIn() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main 
-        className="flex-1 flex items-center justify-center px-4 py-12 relative"
-        style={{
-          backgroundImage: `url(${authBackground})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-        <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl">
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-6xl flex flex-col md:flex-row items-center gap-8">
+          <div className="w-full md:w-1/2 flex items-center justify-center h-[520px]">
+            <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl h-full flex flex-col">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
             <CardDescription className="text-center">
               Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="flex-1">
+            <form onSubmit={handleSubmit} className="space-y-4 h-full">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -233,7 +226,18 @@ export default function SignIn() {
               </Link>
             </div>
           </CardFooter>
-        </Card>
+            </Card>
+          </div>
+
+          <div className="hidden md:block md:w-1/2 h-[520px] rounded-lg overflow-hidden relative">
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${authBackground})`,
+              }}
+            />
+          </div>
+        </div>
       </main>
       <Footer />
 
