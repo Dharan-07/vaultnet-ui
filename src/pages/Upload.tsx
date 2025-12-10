@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload as UploadIcon, FileUp, Loader2 } from 'lucide-react';
+import { Upload as UploadIcon, FileUp, Loader2, CheckCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ const Upload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStep, setUploadStep] = useState('');
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isDragActive, setIsDragActive] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -35,10 +37,34 @@ const Upload = () => {
     file: null as File | null,
   });
 
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
   const categories = getCategories();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, file }));
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setIsDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+    const file = e.dataTransfer.files?.[0];
     if (file) {
       setFormData(prev => ({ ...prev, file }));
     }
@@ -170,19 +196,23 @@ const Upload = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
       <Navbar />
 
       <div className="container mx-auto px-4 py-8 flex-1">
         <div className="max-w-3xl mx-auto">
-          <div className="mb-8">
+          <div className={`mb-8 transition-all duration-1000 ${
+            isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+          }`}>
             <h1 className="text-4xl font-bold mb-2">Upload Model</h1>
             <p className="text-muted-foreground">
               Share your AI model with the VaultNet community
             </p>
           </div>
 
-          <Card>
+          <Card className={`transition-all duration-1000 delay-100 hover:shadow-lg ${
+            isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+          }`}>
             <CardHeader>
               <CardTitle>Model Information</CardTitle>
               <CardDescription>
@@ -303,26 +333,49 @@ const Upload = () => {
                 {/* File Upload */}
                 <div className="space-y-2">
                   <Label htmlFor="file">Model File *</Label>
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                    <FileUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <Input
-                      id="file"
-                      type="file"
-                      className="hidden"
-                      onChange={handleFileChange}
-                      disabled={isUploading}
-                    />
-                    <Label
-                      htmlFor="file"
-                      className="cursor-pointer text-primary hover:underline"
-                    >
-                      Click to upload
-                    </Label>
-                    <span className="text-muted-foreground"> or drag and drop</span>
-                    {formData.file && (
-                      <p className="mt-2 text-sm font-medium">
-                        Selected: {formData.file.name} ({(formData.file.size / 1024 / 1024).toFixed(2)} MB)
-                      </p>
+                  <div 
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-300 cursor-pointer ${
+                      isDragActive 
+                        ? 'border-primary bg-primary/10 scale-105' 
+                        : formData.file
+                        ? 'border-green-500/50 bg-green-500/5'
+                        : 'border-muted-foreground/50 hover:border-primary hover:bg-primary/5'
+                    }`}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                  >
+                    {formData.file ? (
+                      <>
+                        <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500 animate-bounce" />
+                        <p className="mt-2 text-sm font-medium text-green-600">
+                          Selected: {formData.file.name} ({(formData.file.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                        <Label htmlFor="file" className="cursor-pointer text-primary hover:underline text-sm mt-2 block">
+                          Click to change file
+                        </Label>
+                      </>
+                    ) : (
+                      <>
+                        <FileUp className={`w-12 h-12 mx-auto mb-4 transition-colors ${
+                          isDragActive ? 'text-primary' : 'text-muted-foreground'
+                        }`} />
+                        <Input
+                          id="file"
+                          type="file"
+                          className="hidden"
+                          onChange={handleFileChange}
+                          disabled={isUploading}
+                        />
+                        <Label
+                          htmlFor="file"
+                          className="cursor-pointer text-primary hover:underline"
+                        >
+                          Click to upload
+                        </Label>
+                        <span className="text-muted-foreground"> or drag and drop</span>
+                      </>
                     )}
                   </div>
                 </div>
@@ -362,8 +415,10 @@ const Upload = () => {
           </Card>
 
           {/* Info Cards */}
-          <div className="grid md:grid-cols-2 gap-6 mt-8">
-            <Card>
+          <div className={`grid md:grid-cols-2 gap-6 mt-8 transition-all duration-1000 delay-200 ${
+            isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+          }`}>
+            <Card className="hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-default">
               <CardHeader>
                 <CardTitle className="text-lg">IPFS Storage</CardTitle>
               </CardHeader>
@@ -374,7 +429,7 @@ const Upload = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-default">
               <CardHeader>
                 <CardTitle className="text-lg">Smart Contract</CardTitle>
               </CardHeader>
