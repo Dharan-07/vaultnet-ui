@@ -20,10 +20,16 @@ const Marketplace = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1]);
   const [sortBy, setSortBy] = useState<string>('downloads');
   const [showOnChainOnly, setShowOnChainOnly] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   
   const { models: onChainModels, loading, error, refetch } = useOnChainModels();
   
   const categories = getCategories();
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
 
   // Combine mock models with on-chain models
   const allModels: OnChainModel[] = [
@@ -66,11 +72,13 @@ const Marketplace = () => {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
       <Navbar />
 
       {/* Search Header */}
-      <div className="border-b bg-muted/30">
+      <div className={`border-b bg-muted/30 transition-all duration-1000 ${
+        isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'
+      }`}>
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold">Model Marketplace</h1>
@@ -79,7 +87,7 @@ const Marketplace = () => {
                 variant={showOnChainOnly ? "default" : "outline"}
                 size="sm"
                 onClick={() => setShowOnChainOnly(!showOnChainOnly)}
-                className="gap-2"
+                className="gap-2 transition-all duration-300 hover:shadow-lg"
               >
                 <LinkIcon className="w-4 h-4" />
                 On-Chain Only
@@ -89,7 +97,7 @@ const Marketplace = () => {
                 size="sm" 
                 onClick={refetch}
                 disabled={loading}
-                className="gap-2"
+                className="gap-2 transition-all duration-300 hover:shadow-lg"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
@@ -103,8 +111,10 @@ const Marketplace = () => {
       <div className="container mx-auto px-4 py-8 flex-1">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
-          <aside className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
+          <aside className={`lg:col-span-1 transition-all duration-1000 delay-100 ${
+            isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'
+          }`}>
+            <div className="sticky top-24 space-y-6 p-4 rounded-lg bg-card/50 backdrop-blur-sm border border-primary/10 hover:border-primary/30 transition-colors duration-300">
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Filter className="w-5 h-5" />
@@ -181,14 +191,16 @@ const Marketplace = () => {
           </aside>
 
           {/* Models Grid */}
-          <main className="lg:col-span-3">
+          <main className={`lg:col-span-3 transition-all duration-1000 delay-200 ${
+            isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0'
+          }`}>
             <div className="mb-6 flex items-center justify-between">
               <p className="text-muted-foreground">
                 Showing {sortedModels.length} model{sortedModels.length !== 1 ? 's' : ''}
                 {showOnChainOnly && ' (on-chain only)'}
               </p>
               {onChainModels.length > 0 && (
-                <Badge variant="secondary" className="gap-1">
+                <Badge variant="secondary" className="gap-1 animate-pulse">
                   <LinkIcon className="w-3 h-3" />
                   {onChainModels.length} on-chain
                 </Badge>
@@ -209,15 +221,33 @@ const Marketplace = () => {
               </div>
             ) : sortedModels.length > 0 ? (
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {sortedModels.map(model => (
-                  <div key={`${model.onChain ? 'chain' : 'mock'}-${model.id}`} className="relative">
+                {sortedModels.map((model, idx) => (
+                  <div 
+                    key={`${model.onChain ? 'chain' : 'mock'}-${model.id}`} 
+                    className={`relative transition-all duration-500 ease-out ${
+                      isLoaded 
+                        ? 'translate-y-0 opacity-100' 
+                        : 'translate-y-10 opacity-0'
+                    }`}
+                    style={{
+                      transitionDelay: isLoaded ? `${300 + idx * 50}ms` : '0ms',
+                    }}
+                    onMouseEnter={() => setHoveredCardId(`${model.onChain ? 'chain' : 'mock'}-${model.id}`)}
+                    onMouseLeave={() => setHoveredCardId(null)}
+                  >
                     {model.onChain && (
-                      <Badge className="absolute top-2 right-2 z-10 bg-primary/90">
+                      <Badge className="absolute top-2 right-2 z-10 bg-primary/90 animate-bounce">
                         <LinkIcon className="w-3 h-3 mr-1" />
                         On-Chain
                       </Badge>
                     )}
-                    <ModelCard model={model} />
+                    <div className={`transition-all duration-300 ${
+                      hoveredCardId === `${model.onChain ? 'chain' : 'mock'}-${model.id}`
+                        ? 'scale-105 shadow-lg'
+                        : 'scale-100'
+                    }`}>
+                      <ModelCard model={model} />
+                    </div>
                   </div>
                 ))}
               </div>

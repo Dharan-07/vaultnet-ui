@@ -17,7 +17,7 @@ export const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
 
   return (
-    <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b bg-background/95 backdrop-blur-md sticky top-0 z-50 border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

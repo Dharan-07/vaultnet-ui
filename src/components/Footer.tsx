@@ -4,7 +4,7 @@ import Logo from '@/assets/vn_logo.svg';
 
 export const Footer = () => {
   return (
-    <footer className="border-t bg-card/50 mt-auto">
+    <footer className="border-t bg-background/95 mt-auto border-border/50">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}

@@ -144,12 +144,12 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
       <Navbar />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-6xl flex flex-col md:flex-row items-center gap-8">
           <div className="w-full md:w-1/2 flex items-center justify-center h-[600px]">
-            <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl h-full flex flex-col">
+            <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl h-full flex flex-col bg-card/80 backdrop-blur-sm">
               <CardHeader className="space-y-1">
                 <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
                 <CardDescription className="text-center">
