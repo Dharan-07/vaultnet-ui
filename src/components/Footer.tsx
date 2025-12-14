@@ -71,7 +71,7 @@ export const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Community</h3>
             <div className="flex space-x-4">
-              <a href="https://github.com/Dharan-07/Vaultnet" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                 <Github className="w-5 h-5" />
               </a>
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">

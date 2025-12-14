@@ -2,16 +2,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu, ArrowRight } from 'lucide-react';
 import Logo from '@/assets/vn_logo.svg';
+import welcomeBackground from '@/assets/welcome background.jpg';
 import { useState, useEffect } from 'react';
-
-// Declare the custom element for TypeScript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'spline-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & { url?: string }, HTMLElement>;
-    }
-  }
-}
 
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -20,16 +12,6 @@ const Welcome = () => {
 
   useEffect(() => {
     setIsLoaded(true);
-    
-    // Load Spline viewer script
-    const script = document.createElement('script');
-    script.type = 'module';
-    script.src = 'https://unpkg.com/@splinetool/viewer@1.12.16/build/spline-viewer.js';
-    document.head.appendChild(script);
-    
-    return () => {
-      document.head.removeChild(script);
-    };
   }, []);
 
   useEffect(() => {
@@ -48,26 +30,27 @@ const Welcome = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Spline 3D Background */}
-      <spline-viewer 
-        url="https://prod.spline.design/WcdSRk281zM5Rntd/scene.splinecode"
-        className="absolute inset-0 w-full h-full z-0"
-      />
-      
+    <div 
+      className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden"
+      style={{
+        backgroundImage: `url(${welcomeBackground})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
       {/* Overlay for better text contrast */}
-      <div className="absolute inset-0 bg-background/40 z-[1]" />
-      
+      <div className="absolute inset-0 bg-background/60" />
       {/* Animated background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 z-[2]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" />
       <div 
-        className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl transition-all duration-500 z-[2]"
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl transition-all duration-500"
         style={{
           transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
         }}
       />
       <div 
-        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl transition-all duration-500 z-[2]"
+        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl transition-all duration-500"
         style={{
           transform: `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02}px)`,
         }}
