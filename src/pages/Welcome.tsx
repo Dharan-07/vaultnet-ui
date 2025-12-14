@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu, ArrowRight } from 'lucide-react';
 import Logo from '@/assets/vn_logo.svg';
-import welcomeBackground from '@/assets/welcome background.jpg';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
+
+const Spline = lazy(() => import('@splinetool/react-spline'));
 
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -30,27 +31,30 @@ const Welcome = () => {
   ];
 
   return (
-    <div 
-      className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden"
-      style={{
-        backgroundImage: `url(${welcomeBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
-    >
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Spline 3D Background */}
+      <div className="absolute inset-0 z-0">
+        <Suspense fallback={<div className="w-full h-full bg-background" />}>
+          <Spline 
+            scene="https://prod.spline.design/WcdSRk281zM5Rntd/scene.splinecode"
+            className="w-full h-full"
+          />
+        </Suspense>
+      </div>
+      
       {/* Overlay for better text contrast */}
-      <div className="absolute inset-0 bg-background/60" />
+      <div className="absolute inset-0 bg-background/40 z-[1]" />
+      
       {/* Animated background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 z-[2]" />
       <div 
-        className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl transition-all duration-500"
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl transition-all duration-500 z-[2]"
         style={{
           transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
         }}
       />
       <div 
-        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl transition-all duration-500"
+        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl transition-all duration-500 z-[2]"
         style={{
           transform: `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02}px)`,
         }}
