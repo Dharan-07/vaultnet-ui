@@ -2,27 +2,34 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu, ArrowRight } from 'lucide-react';
 import Logo from '@/assets/vn_logo.svg';
-import { useState, useEffect, useRef } from 'react';
-import { Application } from '@splinetool/runtime';
+import { useState, useEffect } from 'react';
+
+// Declare the custom element for TypeScript
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'spline-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & { url?: string }, HTMLElement>;
+    }
+  }
+}
 
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [splineLoaded, setSplineLoaded] = useState(false);
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     setIsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (canvasRef.current) {
-      const app = new Application(canvasRef.current);
-      app.load('https://prod.spline.design/WcdSRk281zM5Rntd/scene.splinecode')
-        .then(() => setSplineLoaded(true))
-        .catch(console.error);
-    }
+    
+    // Load Spline viewer script
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = 'https://unpkg.com/@splinetool/viewer@1.12.16/build/spline-viewer.js';
+    document.head.appendChild(script);
+    
+    return () => {
+      document.head.removeChild(script);
+    };
   }, []);
 
   useEffect(() => {
@@ -43,15 +50,10 @@ const Welcome = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
       {/* Spline 3D Background */}
-      <canvas 
-        ref={canvasRef} 
+      <spline-viewer 
+        url="https://prod.spline.design/WcdSRk281zM5Rntd/scene.splinecode"
         className="absolute inset-0 w-full h-full z-0"
       />
-      {!splineLoaded && (
-        <div className="absolute inset-0 z-0 bg-background flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
       
       {/* Overlay for better text contrast */}
       <div className="absolute inset-0 bg-background/40 z-[1]" />
