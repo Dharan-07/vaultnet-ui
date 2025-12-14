@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu, ArrowRight } from 'lucide-react';
 import Logo from '@/assets/vn_logo.svg';
-import welcomeBackground from '@/assets/welcome background.jpg';
 import { useState, useEffect, useRef, useMemo } from 'react';
 
 interface Particle {
@@ -100,15 +99,7 @@ const Welcome = () => {
   ];
 
   return (
-    <div 
-      className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden"
-      style={{
-        backgroundImage: `url(${welcomeBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
-    >
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
       {/* Dark overlay for contrast */}
       <div className="absolute inset-0 bg-background/70" />
       
@@ -232,6 +223,84 @@ const Welcome = () => {
           0% { stroke-dashoffset: 100; }
           100% { stroke-dashoffset: 0; }
         }
+        @keyframes glitch {
+          0% {
+            clip-path: inset(40% 0 61% 0);
+            transform: translate(-2px, 2px);
+          }
+          20% {
+            clip-path: inset(92% 0 1% 0);
+            transform: translate(2px, -2px);
+          }
+          40% {
+            clip-path: inset(43% 0 1% 0);
+            transform: translate(-2px, 2px);
+          }
+          60% {
+            clip-path: inset(25% 0 58% 0);
+            transform: translate(2px, -2px);
+          }
+          80% {
+            clip-path: inset(54% 0 7% 0);
+            transform: translate(-2px, 2px);
+          }
+          100% {
+            clip-path: inset(58% 0 43% 0);
+            transform: translate(2px, -2px);
+          }
+        }
+        @keyframes glitch2 {
+          0% {
+            clip-path: inset(25% 0 58% 0);
+            transform: translate(2px, -2px);
+          }
+          20% {
+            clip-path: inset(54% 0 7% 0);
+            transform: translate(-2px, 2px);
+          }
+          40% {
+            clip-path: inset(58% 0 43% 0);
+            transform: translate(2px, -2px);
+          }
+          60% {
+            clip-path: inset(40% 0 61% 0);
+            transform: translate(-2px, 2px);
+          }
+          80% {
+            clip-path: inset(92% 0 1% 0);
+            transform: translate(2px, -2px);
+          }
+          100% {
+            clip-path: inset(43% 0 1% 0);
+            transform: translate(-2px, 2px);
+          }
+        }
+        .glitch-text {
+          position: relative;
+        }
+        .glitch-text::before,
+        .glitch-text::after {
+          content: 'VaultNet';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+        }
+        .glitch-text::before {
+          color: hsl(var(--primary));
+          animation: glitch 2s infinite linear alternate-reverse;
+          text-shadow: 2px 0 hsl(var(--primary));
+        }
+        .glitch-text::after {
+          color: hsl(var(--accent));
+          animation: glitch2 2s infinite linear alternate-reverse;
+          text-shadow: -2px 0 hsl(var(--accent));
+        }
+        .glitch-container:hover .glitch-text::before,
+        .glitch-container:hover .glitch-text::after {
+          animation-duration: 0.3s;
+        }
       `}</style>
       
       <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
@@ -248,14 +317,16 @@ const Welcome = () => {
           />
         </div>
         
-        {/* Animated Website Name */}
-        <h1 
-          className={`text-5xl md:text-7xl font-bold text-foreground mb-6 tracking-tight transition-all duration-1000 ${
+        {/* Glitch Effect Website Name */}
+        <div 
+          className={`glitch-container mb-6 transition-all duration-1000 ${
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}
         >
-          VaultNet
-        </h1>
+          <h1 className="glitch-text text-5xl md:text-7xl font-bold text-foreground tracking-tight cursor-pointer">
+            VaultNet
+          </h1>
+        </div>
         
         {/* Animated Description */}
         <p 
