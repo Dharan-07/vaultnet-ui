@@ -27,8 +27,12 @@ const Welcome = () => {
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [typedText, setTypedText] = useState('');
+  const [showCursor, setShowCursor] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
+  
+  const tagline = "The Decentralized AI Model & Dataset Repository";
 
   // Generate grid nodes for circuit-like pattern
   const gridNodes = useMemo<GridNode[]>(() => {
@@ -64,6 +68,31 @@ const Welcome = () => {
       pulse: Math.random() * Math.PI * 2,
     }));
     setParticles(initialParticles);
+  }, []);
+
+  // Typing effect for tagline
+  useEffect(() => {
+    if (!isLoaded) return;
+    
+    let currentIndex = 0;
+    const typingInterval = setInterval(() => {
+      if (currentIndex <= tagline.length) {
+        setTypedText(tagline.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, 50);
+    
+    return () => clearInterval(typingInterval);
+  }, [isLoaded]);
+
+  // Cursor blink effect
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 530);
+    return () => clearInterval(cursorInterval);
   }, []);
 
   // Animate particles
@@ -328,13 +357,18 @@ const Welcome = () => {
           </h1>
         </div>
         
-        {/* Animated Description */}
+        {/* Typing Effect Tagline */}
         <p 
-          className={`text-lg md:text-xl text-muted-foreground mb-4 leading-relaxed transition-all duration-1000 delay-200 ${
+          className={`text-lg md:text-xl text-muted-foreground mb-4 leading-relaxed transition-all duration-1000 delay-200 h-8 ${
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}
         >
-          The Decentralized AI Model & Dataset Repository
+          {typedText}
+          <span 
+            className={`inline-block w-0.5 h-6 bg-primary ml-1 align-middle ${
+              showCursor ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
         </p>
         <p 
           className={`text-base text-muted-foreground/80 mb-12 max-w-xl mx-auto transition-all duration-1000 delay-300 ${
