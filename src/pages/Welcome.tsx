@@ -8,7 +8,10 @@ interface Particle {
   id: number;
   x: number;
   y: number;
+  baseX: number;
+  baseY: number;
   size: number;
+  baseSize: number;
   speedX: number;
   speedY: number;
   opacity: number;
@@ -67,17 +70,25 @@ const Welcome = () => {
   useEffect(() => {
     setIsLoaded(true);
     
-    // Initialize particles
-    const initialParticles: Particle[] = Array.from({ length: 50 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      speedX: (Math.random() - 0.5) * 0.3,
-      speedY: (Math.random() - 0.5) * 0.3,
-      opacity: Math.random() * 0.5 + 0.2,
-      pulse: Math.random() * Math.PI * 2,
-    }));
+    // Initialize particles - bigger sizes
+    const initialParticles: Particle[] = Array.from({ length: 40 }, (_, i) => {
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const baseSize = Math.random() * 12 + 6; // Much bigger: 6-18px
+      return {
+        id: i,
+        x,
+        y,
+        baseX: x,
+        baseY: y,
+        size: baseSize,
+        baseSize,
+        speedX: (Math.random() - 0.5) * 0.2,
+        speedY: (Math.random() - 0.5) * 0.2,
+        opacity: Math.random() * 0.4 + 0.3,
+        pulse: Math.random() * Math.PI * 2,
+      };
+    });
     setParticles(initialParticles);
 
     // Initialize matrix drops
@@ -154,23 +165,58 @@ const Welcome = () => {
     return () => clearInterval(cursorInterval);
   }, []);
 
-  // Animate particles
+  // Animate particles with mouse interaction
   useEffect(() => {
     const animate = () => {
-      setParticles(prev => prev.map(p => ({
-        ...p,
-        x: ((p.x + p.speedX + 100) % 100),
-        y: ((p.y + p.speedY + 100) % 100),
-        pulse: p.pulse + 0.05,
-        opacity: 0.2 + Math.sin(p.pulse) * 0.3,
-      })));
+      setParticles(prev => prev.map(p => {
+        // Calculate distance from mouse (convert mouse position to percentage)
+        const mouseXPercent = (mousePosition.x / window.innerWidth) * 100;
+        const mouseYPercent = (mousePosition.y / window.innerHeight) * 100;
+        const dx = p.x - mouseXPercent;
+        const dy = p.y - mouseYPercent;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Interaction radius and force
+        const interactionRadius = 20; // percentage
+        const maxForce = 3;
+        
+        let forceX = 0;
+        let forceY = 0;
+        let sizeMultiplier = 1;
+        
+        if (distance < interactionRadius && distance > 0) {
+          // Repel particles from mouse
+          const force = (1 - distance / interactionRadius) * maxForce;
+          forceX = (dx / distance) * force;
+          forceY = (dy / distance) * force;
+          // Grow particles near mouse
+          sizeMultiplier = 1 + (1 - distance / interactionRadius) * 0.8;
+        }
+        
+        // Update position with base movement + mouse force
+        let newX = p.x + p.speedX + forceX * 0.5;
+        let newY = p.y + p.speedY + forceY * 0.5;
+        
+        // Wrap around screen
+        newX = ((newX + 100) % 100);
+        newY = ((newY + 100) % 100);
+        
+        return {
+          ...p,
+          x: newX,
+          y: newY,
+          size: p.baseSize * sizeMultiplier,
+          pulse: p.pulse + 0.03,
+          opacity: 0.3 + Math.sin(p.pulse) * 0.3 + (sizeMultiplier - 1) * 0.3,
+        };
+      }));
       animationRef.current = requestAnimationFrame(animate);
     };
     animationRef.current = requestAnimationFrame(animate);
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, []);
+  }, [mousePosition]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
