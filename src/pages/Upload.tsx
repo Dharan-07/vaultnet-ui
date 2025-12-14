@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload as UploadIcon, FileUp, Loader2, CheckCircle } from 'lucide-react';
+import { Upload as UploadIcon, FileUp, Loader2, CheckCircle, Shield, Scan } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,134 @@ import { getWalletAddress, uploadModel } from '@/lib/web3';
 import { uploadFileToIPFS, uploadMetadataToIPFS, ModelMetadata } from '@/lib/ipfs';
 import { getCategories } from '@/data/mockData';
 
+// Scanning Animation Component
+const ScanningOverlay = ({ fileName, fileSize }: { fileName: string; fileSize: string }) => {
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanPhase, setScanPhase] = useState('Initializing scan...');
+  
+  const scanPhases = [
+    'Initializing scan...',
+    'Analyzing file structure...',
+    'Checking file integrity...',
+    'Scanning for malware...',
+    'Verifying model format...',
+    'Computing file hash...',
+    'Scan complete!'
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setScanProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 2;
+      });
+    }, 60);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const phaseIndex = Math.min(
+      Math.floor((scanProgress / 100) * scanPhases.length),
+      scanPhases.length - 1
+    );
+    setScanPhase(scanPhases[phaseIndex]);
+  }, [scanProgress]);
+
+  return (
+    <div className="absolute inset-0 bg-background/95 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center z-10 overflow-hidden">
+      {/* Scanning grid lines */}
+      <div className="absolute inset-0 opacity-20">
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '20px 20px',
+          }}
+        />
+      </div>
+      
+      {/* Scanning line animation */}
+      <div 
+        className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
+        style={{
+          top: `${scanProgress}%`,
+          boxShadow: '0 0 20px hsl(var(--primary)), 0 0 40px hsl(var(--primary))',
+          transition: 'top 0.1s linear',
+        }}
+      />
+      
+      {/* Corner brackets */}
+      <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-primary animate-pulse" />
+      <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-primary animate-pulse" />
+      <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-primary animate-pulse" />
+      <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-primary animate-pulse" />
+      
+      {/* Central content */}
+      <div className="relative z-10 text-center space-y-6 p-8">
+        {/* Animated scan icon */}
+        <div className="relative inline-block">
+          <Scan className="w-16 h-16 text-primary animate-pulse" />
+          <div 
+            className="absolute inset-0 rounded-full border-2 border-primary/50 animate-ping"
+            style={{ animationDuration: '1.5s' }}
+          />
+          <div 
+            className="absolute inset-0 rounded-full border border-primary/30"
+            style={{
+              animation: 'spin 3s linear infinite',
+            }}
+          />
+        </div>
+        
+        {/* File info */}
+        <div className="space-y-1">
+          <p className="text-lg font-semibold text-foreground">{fileName}</p>
+          <p className="text-sm text-muted-foreground">{fileSize}</p>
+        </div>
+        
+        {/* Scan phase */}
+        <div className="flex items-center justify-center gap-2 text-primary">
+          <Shield className="w-4 h-4" />
+          <span className="text-sm font-medium">{scanPhase}</span>
+        </div>
+        
+        {/* Progress bar */}
+        <div className="w-64 mx-auto space-y-2">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-100"
+              style={{ 
+                width: `${scanProgress}%`,
+                boxShadow: '0 0 10px hsl(var(--primary))',
+              }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">{scanProgress}% complete</p>
+        </div>
+        
+        {/* Binary data effect */}
+        <div className="text-xs font-mono text-primary/40 max-w-xs mx-auto truncate">
+          {Array.from({ length: 40 }, () => Math.random() > 0.5 ? '1' : '0').join('')}
+        </div>
+      </div>
+      
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
 const Upload = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,6 +153,7 @@ const Upload = () => {
   const [uploadStep, setUploadStep] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -47,6 +176,9 @@ const Upload = () => {
     const file = e.target.files?.[0];
     if (file) {
       setFormData(prev => ({ ...prev, file }));
+      // Trigger scanning animation
+      setIsScanning(true);
+      setTimeout(() => setIsScanning(false), 3500);
     }
   };
 
@@ -67,6 +199,9 @@ const Upload = () => {
     const file = e.dataTransfer.files?.[0];
     if (file) {
       setFormData(prev => ({ ...prev, file }));
+      // Trigger scanning animation
+      setIsScanning(true);
+      setTimeout(() => setIsScanning(false), 3500);
     }
   };
 
@@ -334,7 +469,7 @@ const Upload = () => {
                 <div className="space-y-2">
                   <Label htmlFor="file">Model File *</Label>
                   <div 
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-300 cursor-pointer ${
+                    className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-300 cursor-pointer ${
                       isDragActive 
                         ? 'border-primary bg-primary/10 scale-105' 
                         : formData.file
@@ -346,17 +481,28 @@ const Upload = () => {
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
                   >
-                    {formData.file ? (
+                    {/* Scanning overlay */}
+                    {isScanning && formData.file && (
+                      <ScanningOverlay 
+                        fileName={formData.file.name}
+                        fileSize={`${(formData.file.size / 1024 / 1024).toFixed(2)} MB`}
+                      />
+                    )}
+                    
+                    {formData.file && !isScanning ? (
                       <>
                         <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500 animate-bounce" />
                         <p className="mt-2 text-sm font-medium text-green-600">
                           Selected: {formData.file.name} ({(formData.file.size / 1024 / 1024).toFixed(2)} MB)
                         </p>
+                        <p className="text-xs text-green-500/70 mt-1 flex items-center justify-center gap-1">
+                          <Shield className="w-3 h-3" /> File scanned and verified
+                        </p>
                         <Label htmlFor="file" className="cursor-pointer text-primary hover:underline text-sm mt-2 block">
                           Click to change file
                         </Label>
                       </>
-                    ) : (
+                    ) : !isScanning && (
                       <>
                         <FileUp className={`w-12 h-12 mx-auto mb-4 transition-colors ${
                           isDragActive ? 'text-primary' : 'text-muted-foreground'
