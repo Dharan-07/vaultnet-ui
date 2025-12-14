@@ -2,15 +2,27 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu, ArrowRight } from 'lucide-react';
 import Logo from '@/assets/vn_logo.svg';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Application } from '@splinetool/runtime';
 
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [splineLoaded, setSplineLoaded] = useState(false);
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      const app = new Application(canvasRef.current);
+      app.load('https://prod.spline.design/WcdSRk281zM5Rntd/scene.splinecode')
+        .then(() => setSplineLoaded(true))
+        .catch(console.error);
+    }
   }, []);
 
   useEffect(() => {
@@ -30,13 +42,16 @@ const Welcome = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Spline 3D Background via iframe */}
-      <iframe
-        src="https://my.spline.design/WcdSRk281zM5Rntd/"
-        frameBorder="0"
+      {/* Spline 3D Background */}
+      <canvas 
+        ref={canvasRef} 
         className="absolute inset-0 w-full h-full z-0"
-        title="Spline 3D Background"
       />
+      {!splineLoaded && (
+        <div className="absolute inset-0 z-0 bg-background flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
       
       {/* Overlay for better text contrast */}
       <div className="absolute inset-0 bg-background/40 z-[1]" />
