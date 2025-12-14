@@ -22,6 +22,15 @@ interface GridNode {
   connections: number[];
 }
 
+interface MatrixDrop {
+  id: number;
+  x: number;
+  y: number;
+  speed: number;
+  chars: string[];
+  opacity: number;
+}
+
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
@@ -29,10 +38,12 @@ const Welcome = () => {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [typedText, setTypedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [matrixDrops, setMatrixDrops] = useState<MatrixDrop[]>([]);
   const animationRef = useRef<number>();
+  const matrixAnimationRef = useRef<number>();
   
   const tagline = "The Decentralized AI Model & Dataset Repository";
+  const matrixChars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   // Generate grid nodes for circuit-like pattern
   const gridNodes = useMemo<GridNode[]>(() => {
@@ -68,6 +79,54 @@ const Welcome = () => {
       pulse: Math.random() * Math.PI * 2,
     }));
     setParticles(initialParticles);
+
+    // Initialize matrix drops
+    const numColumns = Math.floor(window.innerWidth / 20);
+    const initialDrops: MatrixDrop[] = Array.from({ length: numColumns }, (_, i) => ({
+      id: i,
+      x: (i / numColumns) * 100,
+      y: Math.random() * -100,
+      speed: Math.random() * 2 + 1,
+      chars: Array.from({ length: Math.floor(Math.random() * 15) + 5 }, () => 
+        matrixChars[Math.floor(Math.random() * matrixChars.length)]
+      ),
+      opacity: Math.random() * 0.5 + 0.3,
+    }));
+    setMatrixDrops(initialDrops);
+  }, []);
+
+  // Matrix rain animation
+  useEffect(() => {
+    const animateMatrix = () => {
+      setMatrixDrops(prev => prev.map(drop => {
+        const newY = drop.y + drop.speed;
+        if (newY > 120) {
+          return {
+            ...drop,
+            y: Math.random() * -50 - 10,
+            speed: Math.random() * 2 + 1,
+            chars: Array.from({ length: Math.floor(Math.random() * 15) + 5 }, () => 
+              matrixChars[Math.floor(Math.random() * matrixChars.length)]
+            ),
+            opacity: Math.random() * 0.5 + 0.3,
+          };
+        }
+        return {
+          ...drop,
+          y: newY,
+          chars: drop.chars.map((char, idx) => 
+            Math.random() > 0.95 
+              ? matrixChars[Math.floor(Math.random() * matrixChars.length)]
+              : char
+          ),
+        };
+      }));
+      matrixAnimationRef.current = requestAnimationFrame(animateMatrix);
+    };
+    matrixAnimationRef.current = requestAnimationFrame(animateMatrix);
+    return () => {
+      if (matrixAnimationRef.current) cancelAnimationFrame(matrixAnimationRef.current);
+    };
   }, []);
 
   // Typing effect for tagline
@@ -131,6 +190,37 @@ const Welcome = () => {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
       {/* Dark overlay for contrast */}
       <div className="absolute inset-0 bg-background/70" />
+      
+      {/* Matrix Rain Effect */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ opacity: 0.15 }}>
+        {matrixDrops.map(drop => (
+          <div
+            key={drop.id}
+            className="absolute flex flex-col items-center font-mono text-xs"
+            style={{
+              left: `${drop.x}%`,
+              top: `${drop.y}%`,
+              opacity: drop.opacity,
+            }}
+          >
+            {drop.chars.map((char, idx) => (
+              <span
+                key={idx}
+                className="text-primary"
+                style={{
+                  opacity: idx === 0 ? 1 : 1 - (idx / drop.chars.length) * 0.8,
+                  textShadow: idx === 0 
+                    ? '0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary))' 
+                    : 'none',
+                  color: idx === 0 ? 'hsl(var(--primary))' : undefined,
+                }}
+              >
+                {char}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
       
       {/* Animated grid circuit pattern */}
       <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.15 }}>
@@ -227,31 +317,7 @@ const Welcome = () => {
         }}
       />
 
-      {/* Scanning line effect */}
-      <div 
-        className="absolute inset-0 overflow-hidden pointer-events-none"
-      >
-        <div 
-          className="absolute w-full h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent"
-          style={{
-            animation: 'scanLine 3s linear infinite',
-          }}
-        />
-      </div>
-
       <style>{`
-        @keyframes scanLine {
-          0% { top: -2px; }
-          100% { top: 100%; }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        @keyframes dataFlow {
-          0% { stroke-dashoffset: 100; }
-          100% { stroke-dashoffset: 0; }
-        }
         @keyframes glitch {
           0% {
             clip-path: inset(40% 0 61% 0);
