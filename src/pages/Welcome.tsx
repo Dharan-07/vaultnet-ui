@@ -35,7 +35,6 @@ const Welcome = () => {
         src="https://my.spline.design/WcdSRk281zM5Rntd/"
         frameBorder="0"
         className="absolute inset-0 w-full h-full z-0"
-        style={{ pointerEvents: 'none' }}
         title="Spline 3D Background"
       />
       
