@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Download, ShoppingCart, ExternalLink, Copy, Check, Loader2, LinkIcon } from 'lucide-react';
+import { Download, ShoppingCart, ExternalLink, Copy, Check, Loader2, LinkIcon, Shield, FileSearch, Bug, Fingerprint, CheckCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,56 @@ const ModelDetails = () => {
   const [model, setModel] = useState<DisplayModel | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredTag, setHoveredTag] = useState<number | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanPhase, setScanPhase] = useState(0);
+  const [scanProgress, setScanProgress] = useState(0);
+
+  const scanPhases = [
+    { icon: FileSearch, text: 'Analyzing model structure...' },
+    { icon: Shield, text: 'Verifying integrity hash...' },
+    { icon: Bug, text: 'Scanning for vulnerabilities...' },
+    { icon: Fingerprint, text: 'Validating authenticity...' },
+    { icon: CheckCircle, text: 'Scan complete!' },
+  ];
+
+  // Trigger scan when model loads
+  useEffect(() => {
+    if (model && !loading) {
+      setIsScanning(true);
+      setScanProgress(0);
+      setScanPhase(0);
+      
+      const progressInterval = setInterval(() => {
+        setScanProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(progressInterval);
+            return 100;
+          }
+          return prev + 2;
+        });
+      }, 70);
+
+      const phaseInterval = setInterval(() => {
+        setScanPhase(prev => {
+          if (prev >= scanPhases.length - 1) {
+            clearInterval(phaseInterval);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 700);
+
+      const timeout = setTimeout(() => {
+        setIsScanning(false);
+      }, 3500);
+
+      return () => {
+        clearInterval(progressInterval);
+        clearInterval(phaseInterval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [model, loading]);
 
   useEffect(() => {
     const fetchModel = async () => {
@@ -198,8 +248,87 @@ const ModelDetails = () => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  const ScanningOverlay = () => {
+    const CurrentIcon = scanPhases[scanPhase]?.icon || FileSearch;
+    
+    return (
+      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center">
+        {/* Grid pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="w-full h-full" style={{
+            backgroundImage: `
+              linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px'
+          }} />
+        </div>
+
+        {/* Scan line */}
+        <div 
+          className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-80"
+          style={{
+            top: `${(scanProgress % 100)}%`,
+            boxShadow: '0 0 20px hsl(var(--primary)), 0 0 40px hsl(var(--primary) / 0.5)'
+          }}
+        />
+
+        {/* Corner brackets */}
+        <div className="absolute top-8 left-8 w-16 h-16 border-l-2 border-t-2 border-primary" />
+        <div className="absolute top-8 right-8 w-16 h-16 border-r-2 border-t-2 border-primary" />
+        <div className="absolute bottom-8 left-8 w-16 h-16 border-l-2 border-b-2 border-primary" />
+        <div className="absolute bottom-8 right-8 w-16 h-16 border-r-2 border-b-2 border-primary" />
+
+        {/* Content */}
+        <div className="relative z-10 text-center space-y-8">
+          <div className="relative">
+            <div className="w-32 h-32 mx-auto border-2 border-primary/30 rounded-full flex items-center justify-center">
+              <div className="w-24 h-24 border-2 border-primary/50 rounded-full flex items-center justify-center animate-pulse">
+                <CurrentIcon className="w-12 h-12 text-primary" />
+              </div>
+            </div>
+            <div 
+              className="absolute inset-0 w-32 h-32 mx-auto border-2 border-transparent border-t-primary rounded-full animate-spin"
+              style={{ animationDuration: '1s' }}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-2xl font-bold text-primary">Scanning Model</h3>
+            <p className="text-muted-foreground font-mono">{model?.name}</p>
+          </div>
+
+          <div className="space-y-3 w-80 mx-auto">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{scanPhases[scanPhase]?.text}</span>
+              <span className="text-primary font-mono">{scanProgress}%</span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-100"
+                style={{ width: `${scanProgress}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-2">
+            {scanPhases.slice(0, -1).map((phase, idx) => (
+              <div 
+                key={idx}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  idx <= scanPhase ? 'bg-primary' : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
+      {isScanning && <ScanningOverlay />}
       <Navbar />
 
       <div className="container mx-auto px-4 py-8 flex-1">
