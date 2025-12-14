@@ -2,9 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu, ArrowRight } from 'lucide-react';
 import Logo from '@/assets/vn_logo.svg';
-import { useState, useEffect, Suspense, lazy } from 'react';
-
-const Spline = lazy(() => import('@splinetool/react-spline'));
+import { useState, useEffect } from 'react';
 
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -32,15 +30,14 @@ const Welcome = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Spline 3D Background */}
-      <div className="absolute inset-0 z-0">
-        <Suspense fallback={<div className="w-full h-full bg-background" />}>
-          <Spline 
-            scene="https://prod.spline.design/WcdSRk281zM5Rntd/scene.splinecode"
-            className="w-full h-full"
-          />
-        </Suspense>
-      </div>
+      {/* Spline 3D Background via iframe */}
+      <iframe
+        src="https://my.spline.design/WcdSRk281zM5Rntd/"
+        frameBorder="0"
+        className="absolute inset-0 w-full h-full z-0"
+        style={{ pointerEvents: 'none' }}
+        title="Spline 3D Background"
+      />
       
       {/* Overlay for better text contrast */}
       <div className="absolute inset-0 bg-background/40 z-[1]" />
