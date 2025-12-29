@@ -17,6 +17,8 @@ const Welcome = () => {
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
   const [typedText, setTypedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
+  const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   
   const tagline = "The Decentralized AI Model & Dataset Repository";
 
@@ -66,6 +68,33 @@ const Welcome = () => {
       setShowCursor(prev => !prev);
     }, 530);
     return () => clearInterval(cursorInterval);
+  }, []);
+
+  // Intersection Observer for card animations
+  useEffect(() => {
+    const observers: IntersectionObserver[] = [];
+    
+    cardRefs.current.forEach((ref, index) => {
+      if (ref) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                setVisibleCards((prev) => new Set([...prev, index]));
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.2, rootMargin: '0px 0px -50px 0px' }
+        );
+        observer.observe(ref);
+        observers.push(observer);
+      }
+    });
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+    };
   }, []);
 
   const features = [
@@ -323,8 +352,13 @@ const Welcome = () => {
                 return (
                   <div
                     key={idx}
-                    className="group p-6 rounded-2xl backdrop-blur-md bg-card/50 border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1"
-                    style={{ animationDelay: `${idx * 100}ms` }}
+                    ref={(el) => (cardRefs.current[idx] = el)}
+                    className={`group p-6 rounded-2xl backdrop-blur-md bg-card/50 border border-border/50 hover:border-primary/30 transition-all duration-700 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 ${
+                      visibleCards.has(idx)
+                        ? 'opacity-100 translate-y-0'
+                        : 'opacity-0 translate-y-8'
+                    }`}
+                    style={{ transitionDelay: `${idx * 100}ms` }}
                   >
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
