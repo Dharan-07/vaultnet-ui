@@ -326,14 +326,18 @@ const Welcome = () => {
       </div>
 
       {/* About Us Section */}
-      <section id="about-section" className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background relative py-20 px-6">
-        {/* Background decorations */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-40 right-10 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
+      <section id="about-section" className="min-h-screen relative py-20 px-6">
+        {/* Spline 3D Background */}
+        <div className="absolute inset-0 z-0">
+          <Spline
+            scene="https://prod.spline.design/3evH-nTngqw-iSJv/scene.splinecode"
+          />
         </div>
+        
+        {/* Dark overlay for contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/60 to-background/80 z-10" />
 
-        <div className="max-w-6xl mx-auto relative z-10">
+        <div className="max-w-6xl mx-auto relative z-20">
           {/* Section Header */}
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
