@@ -101,8 +101,13 @@ Color palette: Vibrant blue (#3B82F6), Cyan accent (#0EA5E9), Clean white backgr
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
