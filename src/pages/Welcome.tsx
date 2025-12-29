@@ -187,7 +187,7 @@ const Welcome = () => {
         
         {/* Interactive Features preview */}
         <div 
-          className={`flex flex-col md:flex-row justify-center gap-8 mb-12 transition-all duration-1000 delay-400 ${
+          className={`flex flex-col md:flex-row justify-center items-stretch gap-8 mb-12 transition-all duration-1000 delay-400 ${
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}
         >
@@ -196,7 +196,7 @@ const Welcome = () => {
             return (
               <div
                 key={idx}
-                className="flex flex-col items-center gap-2 p-6 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-xl cursor-pointer transition-all duration-300 hover:bg-white/20 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 hover:scale-105 group"
+                className="flex flex-col items-center gap-2 p-6 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-xl cursor-pointer transition-all duration-300 hover:bg-white/20 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 hover:scale-105 group basis-0 flex-1 min-h-[140px]"
                 onMouseEnter={() => setActiveFeature(idx)}
                 onMouseLeave={() => setActiveFeature(null)}
               >
