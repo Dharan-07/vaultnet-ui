@@ -1,22 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu, ArrowRight } from 'lucide-react';
-import Logo from '@/assets/vn_logo.svg';
+//import Logo from '@/assets/vn_logo.svg';
 import { useState, useEffect, useRef, useMemo } from 'react';
-
-interface Particle {
-  id: number;
-  x: number;
-  y: number;
-  baseX: number;
-  baseY: number;
-  size: number;
-  baseSize: number;
-  speedX: number;
-  speedY: number;
-  opacity: number;
-  pulse: number;
-}
+import Spline from '@splinetool/react-spline';
 
 interface GridNode {
   id: number;
@@ -25,28 +12,13 @@ interface GridNode {
   connections: number[];
 }
 
-interface MatrixDrop {
-  id: number;
-  x: number;
-  y: number;
-  speed: number;
-  chars: string[];
-  opacity: number;
-}
-
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [particles, setParticles] = useState<Particle[]>([]);
   const [typedText, setTypedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
-  const [matrixDrops, setMatrixDrops] = useState<MatrixDrop[]>([]);
-  const animationRef = useRef<number>();
-  const matrixAnimationRef = useRef<number>();
   
   const tagline = "The Decentralized AI Model & Dataset Repository";
-  const matrixChars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   // Generate grid nodes for circuit-like pattern
   const gridNodes = useMemo<GridNode[]>(() => {
@@ -69,75 +41,6 @@ const Welcome = () => {
 
   useEffect(() => {
     setIsLoaded(true);
-    
-    // Initialize particles - bigger sizes
-    const initialParticles: Particle[] = Array.from({ length: 40 }, (_, i) => {
-      const x = Math.random() * 100;
-      const y = Math.random() * 100;
-      const baseSize = Math.random() * 12 + 6; // Much bigger: 6-18px
-      return {
-        id: i,
-        x,
-        y,
-        baseX: x,
-        baseY: y,
-        size: baseSize,
-        baseSize,
-        speedX: (Math.random() - 0.5) * 0.2,
-        speedY: (Math.random() - 0.5) * 0.2,
-        opacity: Math.random() * 0.4 + 0.3,
-        pulse: Math.random() * Math.PI * 2,
-      };
-    });
-    setParticles(initialParticles);
-
-    // Initialize matrix drops
-    const numColumns = Math.floor(window.innerWidth / 20);
-    const initialDrops: MatrixDrop[] = Array.from({ length: numColumns }, (_, i) => ({
-      id: i,
-      x: (i / numColumns) * 100,
-      y: Math.random() * -100,
-      speed: Math.random() * 2 + 1,
-      chars: Array.from({ length: Math.floor(Math.random() * 15) + 5 }, () => 
-        matrixChars[Math.floor(Math.random() * matrixChars.length)]
-      ),
-      opacity: Math.random() * 0.5 + 0.3,
-    }));
-    setMatrixDrops(initialDrops);
-  }, []);
-
-  // Matrix rain animation
-  useEffect(() => {
-    const animateMatrix = () => {
-      setMatrixDrops(prev => prev.map(drop => {
-        const newY = drop.y + drop.speed;
-        if (newY > 120) {
-          return {
-            ...drop,
-            y: Math.random() * -50 - 10,
-            speed: Math.random() * 2 + 1,
-            chars: Array.from({ length: Math.floor(Math.random() * 15) + 5 }, () => 
-              matrixChars[Math.floor(Math.random() * matrixChars.length)]
-            ),
-            opacity: Math.random() * 0.5 + 0.3,
-          };
-        }
-        return {
-          ...drop,
-          y: newY,
-          chars: drop.chars.map((char, idx) => 
-            Math.random() > 0.95 
-              ? matrixChars[Math.floor(Math.random() * matrixChars.length)]
-              : char
-          ),
-        };
-      }));
-      matrixAnimationRef.current = requestAnimationFrame(animateMatrix);
-    };
-    matrixAnimationRef.current = requestAnimationFrame(animateMatrix);
-    return () => {
-      if (matrixAnimationRef.current) cancelAnimationFrame(matrixAnimationRef.current);
-    };
   }, []);
 
   // Typing effect for tagline
@@ -165,67 +68,6 @@ const Welcome = () => {
     return () => clearInterval(cursorInterval);
   }, []);
 
-  // Animate particles with mouse interaction
-  useEffect(() => {
-    const animate = () => {
-      setParticles(prev => prev.map(p => {
-        // Calculate distance from mouse (convert mouse position to percentage)
-        const mouseXPercent = (mousePosition.x / window.innerWidth) * 100;
-        const mouseYPercent = (mousePosition.y / window.innerHeight) * 100;
-        const dx = p.x - mouseXPercent;
-        const dy = p.y - mouseYPercent;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // Interaction radius and force
-        const interactionRadius = 20; // percentage
-        const maxForce = 3;
-        
-        let forceX = 0;
-        let forceY = 0;
-        let sizeMultiplier = 1;
-        
-        if (distance < interactionRadius && distance > 0) {
-          // Repel particles from mouse
-          const force = (1 - distance / interactionRadius) * maxForce;
-          forceX = (dx / distance) * force;
-          forceY = (dy / distance) * force;
-          // Grow particles near mouse
-          sizeMultiplier = 1 + (1 - distance / interactionRadius) * 0.8;
-        }
-        
-        // Update position with base movement + mouse force
-        let newX = p.x + p.speedX + forceX * 0.5;
-        let newY = p.y + p.speedY + forceY * 0.5;
-        
-        // Wrap around screen
-        newX = ((newX + 100) % 100);
-        newY = ((newY + 100) % 100);
-        
-        return {
-          ...p,
-          x: newX,
-          y: newY,
-          size: p.baseSize * sizeMultiplier,
-          pulse: p.pulse + 0.03,
-          opacity: 0.3 + Math.sin(p.pulse) * 0.3 + (sizeMultiplier - 1) * 0.3,
-        };
-      }));
-      animationRef.current = requestAnimationFrame(animate);
-    };
-    animationRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [mousePosition]);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
   const features = [
     { icon: Database, label: 'Decentralized', description: 'Fully distributed network' },
     { icon: Shield, label: 'Secure', description: 'Blockchain-backed security' },
@@ -234,39 +76,15 @@ const Welcome = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Dark overlay for contrast */}
-      <div className="absolute inset-0 bg-background/70" />
-      
-      {/* Matrix Rain Effect */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ opacity: 0.15 }}>
-        {matrixDrops.map(drop => (
-          <div
-            key={drop.id}
-            className="absolute flex flex-col items-center font-mono text-xs"
-            style={{
-              left: `${drop.x}%`,
-              top: `${drop.y}%`,
-              opacity: drop.opacity,
-            }}
-          >
-            {drop.chars.map((char, idx) => (
-              <span
-                key={idx}
-                className="text-primary"
-                style={{
-                  opacity: idx === 0 ? 1 : 1 - (idx / drop.chars.length) * 0.8,
-                  textShadow: idx === 0 
-                    ? '0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary))' 
-                    : 'none',
-                  color: idx === 0 ? 'hsl(var(--primary))' : undefined,
-                }}
-              >
-                {char}
-              </span>
-            ))}
-          </div>
-        ))}
+      {/* Spline 3D Background */}
+      <div className="absolute inset-0 z-0">
+        <Spline
+          scene="https://prod.spline.design/WcdSRk281zM5Rntd/scene.splinecode"
+        />
       </div>
+      
+      {/* Dark overlay for contrast */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/80 z-10" />
       
       {/* Animated grid circuit pattern */}
       <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.15 }}>
@@ -317,134 +135,10 @@ const Welcome = () => {
         ))}
       </svg>
 
-      {/* Floating particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {particles.map(particle => (
-          <div
-            key={particle.id}
-            className="absolute rounded-full bg-primary"
-            style={{
-              left: `${particle.x}%`,
-              top: `${particle.y}%`,
-              width: `${particle.size}px`,
-              height: `${particle.size}px`,
-              opacity: particle.opacity,
-              boxShadow: `0 0 ${particle.size * 3}px hsl(var(--primary))`,
-              transition: 'opacity 0.3s ease',
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Hexagonal pattern overlay */}
-      <div 
-        className="absolute inset-0 opacity-5"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-      
       {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 animate-pulse" style={{ animationDuration: '4s' }} />
-      
-      {/* Mouse-following glow orbs */}
-      <div 
-        className="absolute w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] transition-all duration-700"
-        style={{
-          left: mousePosition.x - 300,
-          top: mousePosition.y - 300,
-        }}
-      />
-      <div 
-        className="absolute w-[400px] h-[400px] bg-accent/15 rounded-full blur-[100px] transition-all duration-500"
-        style={{
-          left: mousePosition.x - 200 + 100,
-          top: mousePosition.y - 200 - 50,
-        }}
-      />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 animate-pulse z-20" style={{ animationDuration: '4s' }} />
 
-      <style>{`
-        @keyframes glitch {
-          0% {
-            clip-path: inset(40% 0 61% 0);
-            transform: translate(-2px, 2px);
-          }
-          20% {
-            clip-path: inset(92% 0 1% 0);
-            transform: translate(2px, -2px);
-          }
-          40% {
-            clip-path: inset(43% 0 1% 0);
-            transform: translate(-2px, 2px);
-          }
-          60% {
-            clip-path: inset(25% 0 58% 0);
-            transform: translate(2px, -2px);
-          }
-          80% {
-            clip-path: inset(54% 0 7% 0);
-            transform: translate(-2px, 2px);
-          }
-          100% {
-            clip-path: inset(58% 0 43% 0);
-            transform: translate(2px, -2px);
-          }
-        }
-        @keyframes glitch2 {
-          0% {
-            clip-path: inset(25% 0 58% 0);
-            transform: translate(2px, -2px);
-          }
-          20% {
-            clip-path: inset(54% 0 7% 0);
-            transform: translate(-2px, 2px);
-          }
-          40% {
-            clip-path: inset(58% 0 43% 0);
-            transform: translate(2px, -2px);
-          }
-          60% {
-            clip-path: inset(40% 0 61% 0);
-            transform: translate(-2px, 2px);
-          }
-          80% {
-            clip-path: inset(92% 0 1% 0);
-            transform: translate(2px, -2px);
-          }
-          100% {
-            clip-path: inset(43% 0 1% 0);
-            transform: translate(-2px, 2px);
-          }
-        }
-        .glitch-text {
-          position: relative;
-        }
-        .glitch-text::before,
-        .glitch-text::after {
-          content: 'VaultNet';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-        }
-        .glitch-text::before {
-          color: hsl(var(--primary));
-          animation: glitch 2s infinite linear alternate-reverse;
-          text-shadow: 2px 0 hsl(var(--primary));
-        }
-        .glitch-text::after {
-          color: hsl(var(--accent));
-          animation: glitch2 2s infinite linear alternate-reverse;
-          text-shadow: -2px 0 hsl(var(--accent));
-        }
-        .glitch-container:hover .glitch-text::before,
-        .glitch-container:hover .glitch-text::after {
-          animation-duration: 0.3s;
-        }
-      `}</style>
-      
-      <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
+      <div className="relative z-30 text-center px-6 max-w-3xl mx-auto transform transition-all duration-1000 hover:scale-[1.02]">
         {/* Animated Logo/Icon */}
         <div 
           className={`flex justify-center mb-2 transition-all duration-1000 ${
@@ -452,26 +146,26 @@ const Welcome = () => {
           }`}
         >
           <img 
-            src={Logo} 
-            alt="VaultNet Logo" 
-            className="w-40 h-40 hover:scale-110 transition-transform duration-300 cursor-pointer" 
+            //src={Logo} 
+            //alt="VaultNet Logo" 
+            //className="w-40 h-40 hover:scale-110 transition-transform duration-300 cursor-pointer" 
           />
         </div>
         
-        {/* Glitch Effect Website Name */}
+        {/* Website Name */}
         <div 
-          className={`glitch-container mb-6 transition-all duration-1000 ${
+          className={`mb-6 transition-all duration-1000 ${
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}
         >
-          <h1 className="glitch-text text-5xl md:text-7xl font-bold text-foreground tracking-tight cursor-pointer">
+          <h1 className="text-5xl md:text-7xl font-bold text-foreground/90 tracking-tight cursor-pointer drop-shadow-lg hover:text-foreground transition-colors duration-300">
             VaultNet
           </h1>
         </div>
         
         {/* Typing Effect Tagline */}
         <p 
-          className={`text-lg md:text-xl text-muted-foreground mb-4 leading-relaxed transition-all duration-1000 delay-200 h-8 ${
+          className={`text-lg md:text-xl text-foreground/70 mb-4 leading-relaxed transition-all duration-1000 delay-200 h-8 ${
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}
         >
@@ -483,7 +177,7 @@ const Welcome = () => {
           />
         </p>
         <p 
-          className={`text-base text-muted-foreground/80 mb-12 max-w-xl mx-auto transition-all duration-1000 delay-300 ${
+          className={`text-base text-foreground/80 mb-12 max-w-xl mx-auto transition-all duration-1000 delay-300 ${
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}
         >
@@ -502,20 +196,20 @@ const Welcome = () => {
             return (
               <div
                 key={idx}
-                className="flex flex-col items-center gap-2 p-6 rounded-lg border border-primary/10 cursor-pointer transition-all duration-300 hover:border-primary/50 hover:bg-primary/5 hover:shadow-lg hover:-translate-y-2 group"
+                className="flex flex-col items-center gap-2 p-6 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-xl cursor-pointer transition-all duration-300 hover:bg-white/20 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 hover:scale-105 group"
                 onMouseEnter={() => setActiveFeature(idx)}
                 onMouseLeave={() => setActiveFeature(null)}
               >
                 <Icon 
                   className={`w-8 h-8 transition-all duration-300 ${
-                    activeFeature === idx ? 'text-primary scale-125' : 'text-primary/70 group-hover:text-primary'
+                    activeFeature === idx ? 'text-primary scale-125' : 'text-primary/80 group-hover:text-primary'
                   }`}
                 />
-                <span className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
+                <span className="font-semibold text-foreground/80 group-hover:text-foreground transition-colors">
                   {feature.label}
                 </span>
                 <span 
-                  className={`text-xs text-muted-foreground/60 max-w-xs transition-all duration-300 ${
+                  className={`text-xs text-foreground/60 max-w-xs transition-all duration-300 ${
                     activeFeature === idx ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 hidden'
                   }`}
                 >
@@ -530,7 +224,7 @@ const Welcome = () => {
         <Link to="/home">
           <Button 
             size="lg" 
-            className={`px-12 py-6 text-lg font-semibold transition-all duration-1000 delay-500 group hover:shadow-lg hover:shadow-primary/50 ${
+            className={`px-12 py-6 text-lg font-semibold transition-all duration-1000 delay-500 group hover:shadow-lg hover:shadow-primary/50 backdrop-blur-sm bg-primary/90 hover:bg-primary border border-primary/20 hover:border-primary/40 ${
               isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
             }`}
           >
@@ -542,7 +236,7 @@ const Welcome = () => {
       
       {/* Animated Footer */}
       <p 
-        className={`absolute bottom-8 text-sm text-muted-foreground/50 transition-all duration-1000 delay-700 ${
+        className={`absolute bottom-8 text-sm text-foreground/40 transition-all duration-1000 delay-700 z-30 ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
       >
@@ -551,5 +245,7 @@ const Welcome = () => {
     </div>
   );
 };
+
+
 
 export default Welcome;
