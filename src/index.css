@@ -109,14 +109,39 @@ Color palette: Vibrant blue (#3B82F6), Cyan accent (#0EA5E9), Clean white backgr
     @apply bg-background text-foreground;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Smooth transitions for interactive elements */
+  a, button, input, select, textarea {
+    @apply transition-all duration-300;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Smooth image loading */
+  img {
+    @apply transition-opacity duration-500;
+  }
 }
 
 @layer utilities {
   .card-hover {
-    @apply transition-all duration-200 hover:shadow-lg;
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   }
   
   .gradient-primary {
     background: var(--hero-gradient);
+  }
+
+  .smooth-appear {
+    @apply animate-fade-in;
+  }
+
+  .smooth-scale {
+    @apply transition-transform duration-300 hover:scale-105;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .link-smooth {
+    @apply relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full;
   }
 }
