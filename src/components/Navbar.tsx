@@ -17,13 +17,13 @@ export const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur-md sticky top-0 z-50 border-border/50">
+    <nav className="border-b bg-background/95 backdrop-blur-md sticky top-0 z-50 border-border/50 transition-all duration-300">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <img src={Logo} alt="VaultNet Logo" className="w-10 h-10" />
-            <span className="font-bold text-xl group-hover:text-primary transition-colors">
+            <img src={Logo} alt="VaultNet Logo" className="w-10 h-10 transition-transform duration-300 ease-smooth group-hover:scale-110" />
+            <span className="font-bold text-xl group-hover:text-primary transition-all duration-300 ease-smooth">
               VaultNet
             </span>
           </Link>
