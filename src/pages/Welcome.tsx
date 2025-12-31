@@ -303,9 +303,7 @@ const Welcome = () => {
           <Link to="/home">
             <Button 
               size="lg" 
-              className={`px-12 py-6 text-lg font-semibold transition-all duration-1000 delay-500 group hover:shadow-lg hover:shadow-primary/50 backdrop-blur-sm bg-primary/90 hover:bg-primary border border-primary/20 hover:border-primary/40 ${
-                isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-              }`}
+              className={`px-12 py-6 text-lg font-semibold transition-none group hover:shadow-xl hover:shadow-primary/30 hover:backdrop-blur-md hover:text-blue-600 bg-primary/90 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 hover:border-white/30 ${isLoaded ? 'transition-all duration-1000 delay-500 translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
             >
               Get Started
               <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
