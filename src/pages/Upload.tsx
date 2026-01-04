@@ -608,6 +608,15 @@ const Upload = () => {
                     onDrop={handleDrop}
                   >
                     
+                    {/* Hidden file input - always render it */}
+                    <Input
+                      id="file"
+                      type="file"
+                      className="hidden"
+                      onChange={handleFileChange}
+                      disabled={isUploading}
+                    />
+                    
                     {formData.file && !isScanning ? (
                       <>
                         <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500 animate-bounce" />
@@ -626,13 +635,6 @@ const Upload = () => {
                         <FileUp className={`w-12 h-12 mx-auto mb-4 transition-colors ${
                           isDragActive ? 'text-primary' : 'text-muted-foreground'
                         }`} />
-                        <Input
-                          id="file"
-                          type="file"
-                          className="hidden"
-                          onChange={handleFileChange}
-                          disabled={isUploading}
-                        />
                         <Label
                           htmlFor="file"
                           className="cursor-pointer text-primary hover:underline"
