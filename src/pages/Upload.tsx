@@ -20,6 +20,7 @@ import { getCategories } from '@/data/mockData';
 const ScanningOverlay = ({ fileName, fileSize }: { fileName: string; fileSize: string }) => {
   const [scanProgress, setScanProgress] = useState(0);
   const [scanPhase, setScanPhase] = useState('Initializing scan...');
+  const [binaryData, setBinaryData] = useState('');
   
   const scanPhases = [
     'Initializing scan...',
@@ -45,6 +46,14 @@ const ScanningOverlay = ({ fileName, fileSize }: { fileName: string; fileSize: s
     return () => clearInterval(interval);
   }, []);
 
+  // Animate binary data
+  useEffect(() => {
+    const binaryInterval = setInterval(() => {
+      setBinaryData(Array.from({ length: 40 }, () => Math.random() > 0.5 ? '1' : '0').join(''));
+    }, 100);
+    return () => clearInterval(binaryInterval);
+  }, []);
+
   useEffect(() => {
     const phaseIndex = Math.min(
       Math.floor((scanProgress / 100) * scanPhases.length),
@@ -54,11 +63,11 @@ const ScanningOverlay = ({ fileName, fileSize }: { fileName: string; fileSize: s
   }, [scanProgress]);
 
   return (
-    <div className="absolute inset-0 bg-background/95 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center z-10 overflow-hidden">
+    <div className="absolute inset-0 bg-background/95 backdrop-blur-md rounded-lg flex flex-col items-center justify-center z-10 overflow-hidden animate-fade-in">
       {/* Scanning grid lines */}
       <div className="absolute inset-0 opacity-20">
         <div 
-          className="absolute inset-0"
+          className="absolute inset-0 animate-pulse"
           style={{
             backgroundImage: `
               linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
@@ -71,66 +80,63 @@ const ScanningOverlay = ({ fileName, fileSize }: { fileName: string; fileSize: s
       
       {/* Scanning line animation */}
       <div 
-        className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
+        className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent transition-all duration-150 ease-out"
         style={{
           top: `${scanProgress}%`,
           boxShadow: '0 0 20px hsl(var(--primary)), 0 0 40px hsl(var(--primary))',
-          transition: 'top 0.1s linear',
         }}
       />
       
-      {/* Corner brackets */}
-      <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-primary animate-pulse" />
-      <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-primary animate-pulse" />
-      <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-primary animate-pulse" />
-      <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-primary animate-pulse" />
+      {/* Corner brackets with staggered animation */}
+      <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-primary animate-pulse transition-all duration-300" style={{ animationDelay: '0ms' }} />
+      <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-primary animate-pulse transition-all duration-300" style={{ animationDelay: '100ms' }} />
+      <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-primary animate-pulse transition-all duration-300" style={{ animationDelay: '200ms' }} />
+      <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-primary animate-pulse transition-all duration-300" style={{ animationDelay: '300ms' }} />
       
       {/* Central content */}
-      <div className="relative z-10 text-center space-y-6 p-8">
+      <div className="relative z-10 text-center space-y-6 p-8 animate-scale-in">
         {/* Animated scan icon */}
         <div className="relative inline-block">
-          <Scan className="w-16 h-16 text-primary animate-pulse" />
+          <Scan className="w-16 h-16 text-primary transition-transform duration-500 hover:scale-110" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
           <div 
-            className="absolute inset-0 rounded-full border-2 border-primary/50 animate-ping"
-            style={{ animationDuration: '1.5s' }}
+            className="absolute inset-0 rounded-full border-2 border-primary/50"
+            style={{ animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}
           />
           <div 
             className="absolute inset-0 rounded-full border border-primary/30"
-            style={{
-              animation: 'spin 3s linear infinite',
-            }}
+            style={{ animation: 'spin 3s linear infinite' }}
           />
         </div>
         
         {/* File info */}
-        <div className="space-y-1">
-          <p className="text-lg font-semibold text-foreground">{fileName}</p>
+        <div className="space-y-1 animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <p className="text-lg font-semibold text-foreground transition-all duration-300">{fileName}</p>
           <p className="text-sm text-muted-foreground">{fileSize}</p>
         </div>
         
-        {/* Scan phase */}
-        <div className="flex items-center justify-center gap-2 text-primary">
-          <Shield className="w-4 h-4" />
-          <span className="text-sm font-medium">{scanPhase}</span>
+        {/* Scan phase with smooth transition */}
+        <div className="flex items-center justify-center gap-2 text-primary transition-all duration-500 ease-out">
+          <Shield className="w-4 h-4 transition-transform duration-300" style={{ animation: scanProgress === 100 ? 'bounce 0.5s ease-out' : 'none' }} />
+          <span className="text-sm font-medium transition-all duration-300">{scanPhase}</span>
         </div>
         
-        {/* Progress bar */}
+        {/* Progress bar with smooth animation */}
         <div className="w-64 mx-auto space-y-2">
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-100"
+              className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-300 ease-out"
               style={{ 
                 width: `${scanProgress}%`,
-                boxShadow: '0 0 10px hsl(var(--primary))',
+                boxShadow: '0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary) / 0.5)',
               }}
             />
           </div>
-          <p className="text-xs text-muted-foreground">{scanProgress}% complete</p>
+          <p className="text-xs text-muted-foreground transition-all duration-200">{scanProgress}% complete</p>
         </div>
         
-        {/* Binary data effect */}
-        <div className="text-xs font-mono text-primary/40 max-w-xs mx-auto truncate">
-          {Array.from({ length: 40 }, () => Math.random() > 0.5 ? '1' : '0').join('')}
+        {/* Binary data effect with continuous animation */}
+        <div className="text-xs font-mono text-primary/40 max-w-xs mx-auto truncate transition-opacity duration-200">
+          {binaryData}
         </div>
       </div>
       
@@ -138,6 +144,107 @@ const ScanningOverlay = ({ fileName, fileSize }: { fileName: string; fileSize: s
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes ping {
+          75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// Upload Progress Overlay Component
+const UploadingOverlay = ({ step, progress }: { step: string; progress: number }) => {
+  const [dots, setDots] = useState('');
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '' : prev + '.');
+    }, 400);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center animate-fade-in">
+      <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl animate-scale-in">
+        {/* Animated Upload Icon */}
+        <div className="relative w-24 h-24 mx-auto mb-6">
+          <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse" />
+          <div 
+            className="absolute inset-2 rounded-full border-4 border-primary/30 border-t-primary transition-all duration-300"
+            style={{ animation: 'spin 1s linear infinite' }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <UploadIcon className="w-10 h-10 text-primary transition-transform duration-500" style={{ animation: 'float 2s ease-in-out infinite' }} />
+          </div>
+        </div>
+
+        {/* Step text */}
+        <div className="text-center mb-6">
+          <h3 className="text-xl font-semibold text-foreground mb-2 transition-all duration-300">
+            Uploading{dots}
+          </h3>
+          <p className="text-sm text-muted-foreground transition-all duration-500 ease-out">
+            {step}
+          </p>
+        </div>
+
+        {/* Progress bar */}
+        <div className="space-y-3">
+          <div className="h-3 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary rounded-full transition-all duration-500 ease-out relative"
+              style={{ 
+                width: `${progress}%`,
+              }}
+            >
+              <div 
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                style={{ animation: 'shimmer 1.5s ease-in-out infinite' }}
+              />
+            </div>
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Progress</span>
+            <span className="font-medium text-foreground transition-all duration-200">{progress}%</span>
+          </div>
+        </div>
+
+        {/* Step indicators */}
+        <div className="mt-6 flex justify-center gap-2">
+          {[1, 2, 3].map((stepNum) => (
+            <div 
+              key={stepNum}
+              className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                progress >= (stepNum * 33) 
+                  ? 'bg-primary scale-110' 
+                  : 'bg-muted'
+              }`}
+              style={{ 
+                boxShadow: progress >= (stepNum * 33) ? '0 0 8px hsl(var(--primary))' : 'none',
+                transitionDelay: `${stepNum * 100}ms`
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
         }
       `}</style>
     </div>
@@ -526,22 +633,16 @@ const Upload = () => {
                   </div>
                 </div>
 
-                {/* Upload Progress */}
+                {/* Upload Progress Overlay */}
                 {isUploading && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>{uploadStep}</span>
-                      <span>{uploadProgress}%</span>
-                    </div>
-                    <Progress value={uploadProgress} />
-                  </div>
+                  <UploadingOverlay step={uploadStep} progress={uploadProgress} />
                 )}
 
                 {/* Submit Button */}
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full gap-2"
+                  className="w-full gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                   disabled={isUploading}
                 >
                   {isUploading ? (
@@ -551,7 +652,7 @@ const Upload = () => {
                     </>
                   ) : (
                     <>
-                      <UploadIcon className="w-5 h-5" />
+                      <UploadIcon className="w-5 h-5 transition-transform duration-300 group-hover:-translate-y-0.5" />
                       Upload to IPFS & Blockchain
                     </>
                   )}
