@@ -16,8 +16,8 @@ import { getWalletAddress, uploadModel } from '@/lib/web3';
 import { uploadFileToIPFS, uploadMetadataToIPFS, ModelMetadata } from '@/lib/ipfs';
 import { getCategories } from '@/data/mockData';
 
-// Scanning Animation Component
-const ScanningOverlay = ({ fileName, fileSize }: { fileName: string; fileSize: string }) => {
+// Scanning Popup Modal Component
+const ScanningPopup = ({ fileName, fileSize, onComplete }: { fileName: string; fileSize: string; onComplete?: () => void }) => {
   const [scanProgress, setScanProgress] = useState(0);
   const [scanPhase, setScanPhase] = useState('Initializing scan...');
   const [binaryData, setBinaryData] = useState('');
@@ -63,96 +63,107 @@ const ScanningOverlay = ({ fileName, fileSize }: { fileName: string; fileSize: s
   }, [scanProgress]);
 
   return (
-    <div className="absolute inset-0 bg-background/95 backdrop-blur-md rounded-lg flex flex-col items-center justify-center z-10 overflow-hidden animate-fade-in">
-      {/* Scanning grid lines */}
-      <div className="absolute inset-0 opacity-20">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center animate-fade-in">
+      <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl animate-scale-in relative overflow-hidden">
+        {/* Scanning grid lines */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <div 
+            className="absolute inset-0 animate-pulse"
+            style={{
+              backgroundImage: `
+                linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)
+              `,
+              backgroundSize: '20px 20px',
+            }}
+          />
+        </div>
+        
+        {/* Scanning line animation */}
         <div 
-          className="absolute inset-0 animate-pulse"
+          className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent transition-all duration-150 ease-out pointer-events-none"
           style={{
-            backgroundImage: `
-              linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
-              linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)
-            `,
-            backgroundSize: '20px 20px',
+            top: `${scanProgress}%`,
+            boxShadow: '0 0 15px hsl(var(--primary)), 0 0 30px hsl(var(--primary))',
           }}
         />
-      </div>
-      
-      {/* Scanning line animation */}
-      <div 
-        className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent transition-all duration-150 ease-out"
-        style={{
-          top: `${scanProgress}%`,
-          boxShadow: '0 0 20px hsl(var(--primary)), 0 0 40px hsl(var(--primary))',
-        }}
-      />
-      
-      {/* Corner brackets with staggered animation */}
-      <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-primary animate-pulse transition-all duration-300" style={{ animationDelay: '0ms' }} />
-      <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-primary animate-pulse transition-all duration-300" style={{ animationDelay: '100ms' }} />
-      <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-primary animate-pulse transition-all duration-300" style={{ animationDelay: '200ms' }} />
-      <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-primary animate-pulse transition-all duration-300" style={{ animationDelay: '300ms' }} />
-      
-      {/* Central content */}
-      <div className="relative z-10 text-center space-y-6 p-8 animate-scale-in">
-        {/* Animated scan icon */}
-        <div className="relative inline-block">
-          <Scan className="w-16 h-16 text-primary transition-transform duration-500 hover:scale-110" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
-          <div 
-            className="absolute inset-0 rounded-full border-2 border-primary/50"
-            style={{ animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}
-          />
-          <div 
-            className="absolute inset-0 rounded-full border border-primary/30"
-            style={{ animation: 'spin 3s linear infinite' }}
-          />
-        </div>
         
-        {/* File info */}
-        <div className="space-y-1 animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <p className="text-lg font-semibold text-foreground transition-all duration-300">{fileName}</p>
-          <p className="text-sm text-muted-foreground">{fileSize}</p>
-        </div>
+        {/* Corner brackets */}
+        <div className="absolute top-3 left-3 w-6 h-6 border-l-2 border-t-2 border-primary animate-pulse" style={{ animationDelay: '0ms' }} />
+        <div className="absolute top-3 right-3 w-6 h-6 border-r-2 border-t-2 border-primary animate-pulse" style={{ animationDelay: '100ms' }} />
+        <div className="absolute bottom-3 left-3 w-6 h-6 border-l-2 border-b-2 border-primary animate-pulse" style={{ animationDelay: '200ms' }} />
+        <div className="absolute bottom-3 right-3 w-6 h-6 border-r-2 border-b-2 border-primary animate-pulse" style={{ animationDelay: '300ms' }} />
         
-        {/* Scan phase with smooth transition */}
-        <div className="flex items-center justify-center gap-2 text-primary transition-all duration-500 ease-out">
-          <Shield className="w-4 h-4 transition-transform duration-300" style={{ animation: scanProgress === 100 ? 'bounce 0.5s ease-out' : 'none' }} />
-          <span className="text-sm font-medium transition-all duration-300">{scanPhase}</span>
-        </div>
-        
-        {/* Progress bar with smooth animation */}
-        <div className="w-64 mx-auto space-y-2">
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
+        {/* Central content */}
+        <div className="relative z-10 text-center space-y-6 py-4">
+          {/* Animated scan icon */}
+          <div className="relative inline-block w-20 h-20 mx-auto">
+            <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse" />
             <div 
-              className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-300 ease-out"
-              style={{ 
-                width: `${scanProgress}%`,
-                boxShadow: '0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary) / 0.5)',
-              }}
+              className="absolute inset-2 rounded-full border-2 border-primary/50"
+              style={{ animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}
             />
+            <div 
+              className="absolute inset-1 rounded-full border border-primary/30"
+              style={{ animation: 'spin 3s linear infinite' }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Scan className="w-10 h-10 text-primary" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground transition-all duration-200">{scanProgress}% complete</p>
+          
+          {/* Title */}
+          <div>
+            <h3 className="text-xl font-semibold text-foreground mb-1">Scanning File</h3>
+            <p className="text-sm text-muted-foreground">Security verification in progress</p>
+          </div>
+          
+          {/* File info */}
+          <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+            <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
+            <p className="text-xs text-muted-foreground">{fileSize}</p>
+          </div>
+          
+          {/* Scan phase */}
+          <div className="flex items-center justify-center gap-2 text-primary">
+            <Shield className="w-4 h-4" style={{ animation: scanProgress === 100 ? 'bounce 0.5s ease-out' : 'none' }} />
+            <span className="text-sm font-medium">{scanPhase}</span>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="space-y-2">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-300 ease-out"
+                style={{ 
+                  width: `${scanProgress}%`,
+                  boxShadow: '0 0 10px hsl(var(--primary))',
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">{scanProgress}% complete</p>
+          </div>
+          
+          {/* Binary data effect */}
+          <div className="text-xs font-mono text-primary/30 truncate">
+            {binaryData}
+          </div>
         </div>
         
-        {/* Binary data effect with continuous animation */}
-        <div className="text-xs font-mono text-primary/40 max-w-xs mx-auto truncate transition-opacity duration-200">
-          {binaryData}
-        </div>
+        <style>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          @keyframes ping {
+            75%, 100% { transform: scale(1.5); opacity: 0; }
+          }
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+          }
+        `}</style>
       </div>
-      
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes ping {
-          75%, 100% { transform: scale(2); opacity: 0; }
-        }
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-        }
-      `}</style>
     </div>
   );
 };
@@ -439,6 +450,14 @@ const Upload = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
+      {/* Scanning Popup Modal */}
+      {isScanning && formData.file && (
+        <ScanningPopup 
+          fileName={formData.file.name}
+          fileSize={`${(formData.file.size / 1024 / 1024).toFixed(2)} MB`}
+        />
+      )}
+      
       <Navbar />
 
       <div className="container mx-auto px-4 py-8 flex-1">
@@ -588,13 +607,6 @@ const Upload = () => {
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
                   >
-                    {/* Scanning overlay */}
-                    {isScanning && formData.file && (
-                      <ScanningOverlay 
-                        fileName={formData.file.name}
-                        fileSize={`${(formData.file.size / 1024 / 1024).toFixed(2)} MB`}
-                      />
-                    )}
                     
                     {formData.file && !isScanning ? (
                       <>
