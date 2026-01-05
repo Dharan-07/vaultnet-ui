@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Download, ShoppingCart, ExternalLink, Copy, Check, Loader2, LinkIcon, Shield, FileSearch, Bug, Fingerprint, CheckCircle } from 'lucide-react';
+import { Download, ShoppingCart, ExternalLink, Copy, Check, Loader2, LinkIcon, Shield, FileSearch, Bug, Fingerprint, CheckCircle, Lock } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import { buyModelAccess, getWalletAddress, getModel, ModelData } from '@/lib/web
 import { downloadFromIPFS, getIPFSUrl, fetchMetadataFromIPFS } from '@/lib/ipfs';
 import { TrustScoreBadge } from '@/components/TrustScoreBadge';
 import { VotingButtons } from '@/components/VotingButtons';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DisplayModel {
   id: number;
@@ -32,6 +34,7 @@ interface DisplayModel {
 const ModelDetails = () => {
   const { id } = useParams();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isBuying, setIsBuying] = useState(false);
   const [copiedCid, setCopiedCid] = useState(false);
   const [hasModelAccess, setHasModelAccess] = useState(false);
@@ -42,6 +45,35 @@ const ModelDetails = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanPhase, setScanPhase] = useState(0);
   const [scanProgress, setScanProgress] = useState(0);
+  const [isUploader, setIsUploader] = useState(false);
+
+  // Check if user has already purchased this model
+  useEffect(() => {
+    const checkPurchaseStatus = async () => {
+      if (!user?.id || !id) return;
+      
+      const { data } = await supabase
+        .from('model_purchases')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('model_id', Number(id))
+        .maybeSingle();
+      
+      if (data) {
+        setHasModelAccess(true);
+      }
+    };
+    
+    checkPurchaseStatus();
+  }, [user?.id, id]);
+
+  // Check if current user is the uploader
+  useEffect(() => {
+    const walletAddress = getWalletAddress();
+    if (model && walletAddress) {
+      setIsUploader(model.uploader.toLowerCase() === walletAddress.toLowerCase());
+    }
+  }, [model]);
 
   const scanPhases = [
     { icon: FileSearch, text: 'Analyzing model structure...' },
@@ -187,6 +219,19 @@ const ModelDetails = () => {
       const result = await buyModelAccess(model.id);
       if (result.success) {
         setHasModelAccess(true);
+        
+        // Save purchase to database
+        if (user?.id) {
+          await supabase.from('model_purchases').insert({
+            user_id: user.id,
+            model_id: model.id,
+            model_cid: model.cid,
+            model_name: model.name,
+            model_price: model.price,
+            tx_hash: result.txHash || null,
+          });
+        }
+        
         toast({
           title: 'Purchase Successful!',
           description: `You now have access to ${model.name}. Transaction: ${result.txHash?.slice(0, 10)}...`,
@@ -210,7 +255,8 @@ const ModelDetails = () => {
   };
 
   const handleDownload = async () => {
-    if (!hasModelAccess && model.onChain) {
+    // Allow download if user is uploader or has purchased access
+    if (!hasModelAccess && !isUploader && model.onChain) {
       toast({
         title: 'Access Required',
         description: 'Please purchase access to download this model',
@@ -233,6 +279,9 @@ const ModelDetails = () => {
       });
     }
   };
+
+  // Check if CID should be visible (uploader or purchased)
+  const canSeeCid = isUploader || hasModelAccess || !model?.onChain;
 
   const copyCid = () => {
     navigator.clipboard.writeText(model.cid);
@@ -426,19 +475,29 @@ const ModelDetails = () => {
                   <CardContent className="space-y-4">
                     <div>
                       <div className="text-sm font-medium mb-2">Content ID (CID)</div>
-                      <div className="flex items-center gap-2">
-                        <code className="flex-1 px-3 py-2 bg-muted rounded font-mono text-sm break-all hover:bg-muted/80 transition-colors cursor-pointer">
-                          {model.cid}
-                        </code>
-                        <Button size="icon" variant="outline" onClick={copyCid} className="transition-all duration-300 hover:shadow-md">
-                          {copiedCid ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                        </Button>
-                        <Button size="icon" variant="outline" asChild className="transition-all duration-300 hover:shadow-md">
-                          <a href={getIPFSUrl(model.cid)} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        </Button>
-                      </div>
+                      {canSeeCid ? (
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 px-3 py-2 bg-muted rounded font-mono text-sm break-all hover:bg-muted/80 transition-colors cursor-pointer">
+                            {model.cid}
+                          </code>
+                          <Button size="icon" variant="outline" onClick={copyCid} className="transition-all duration-300 hover:shadow-md">
+                            {copiedCid ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                          </Button>
+                          <Button size="icon" variant="outline" asChild className="transition-all duration-300 hover:shadow-md">
+                            <a href={getIPFSUrl(model.cid)} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border border-dashed border-muted-foreground/30">
+                          <Lock className="w-5 h-5 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">CID Hidden</p>
+                            <p className="text-xs text-muted-foreground">Purchase access to view the IPFS CID and download this model</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 pt-4">

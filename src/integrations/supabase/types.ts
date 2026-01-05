@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      model_purchases: {
+        Row: {
+          id: string
+          model_cid: string
+          model_id: number
+          model_name: string
+          model_price: string
+          purchased_at: string
+          tx_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          model_cid: string
+          model_id: number
+          model_name: string
+          model_price: string
+          purchased_at?: string
+          tx_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          model_cid?: string
+          model_id?: number
+          model_name?: string
+          model_price?: string
+          purchased_at?: string
+          tx_hash?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       uploaded_datasets: {
         Row: {
           category: string
