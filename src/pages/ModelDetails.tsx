@@ -83,44 +83,39 @@ const ModelDetails = () => {
     { icon: CheckCircle, text: 'Scan complete!' },
   ];
 
-  // Trigger scan when model loads
-  useEffect(() => {
-    if (model && !loading) {
-      setIsScanning(true);
-      setScanProgress(0);
-      setScanPhase(0);
-      
-      const progressInterval = setInterval(() => {
-        setScanProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(progressInterval);
-            return 100;
-          }
-          return prev + 2;
-        });
-      }, 70);
+  // Function to trigger scan animation (only on purchase/download)
+  const triggerScan = (callback?: () => void) => {
+    setIsScanning(true);
+    setScanProgress(0);
+    setScanPhase(0);
+    
+    const progressInterval = setInterval(() => {
+      setScanProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          return 100;
+        }
+        return prev + 2;
+      });
+    }, 70);
 
-      const phaseInterval = setInterval(() => {
-        setScanPhase(prev => {
-          if (prev >= scanPhases.length - 1) {
-            clearInterval(phaseInterval);
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 700);
+    const phaseInterval = setInterval(() => {
+      setScanPhase(prev => {
+        if (prev >= scanPhases.length - 1) {
+          clearInterval(phaseInterval);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 700);
 
-      const timeout = setTimeout(() => {
-        setIsScanning(false);
-      }, 3500);
-
-      return () => {
-        clearInterval(progressInterval);
-        clearInterval(phaseInterval);
-        clearTimeout(timeout);
-      };
-    }
-  }, [model, loading]);
+    setTimeout(() => {
+      clearInterval(progressInterval);
+      clearInterval(phaseInterval);
+      setIsScanning(false);
+      if (callback) callback();
+    }, 3500);
+  };
 
   useEffect(() => {
     const fetchModel = async () => {
@@ -215,43 +210,47 @@ const ModelDetails = () => {
     }
 
     setIsBuying(true);
-    try {
-      const result = await buyModelAccess(model.id);
-      if (result.success) {
-        setHasModelAccess(true);
-        
-        // Save purchase to database
-        if (user?.id) {
-          await supabase.from('model_purchases').insert({
-            user_id: user.id,
-            model_id: model.id,
-            model_cid: model.cid,
-            model_name: model.name,
-            model_price: model.price,
-            tx_hash: result.txHash || null,
+    
+    // Trigger scan animation during purchase
+    triggerScan(async () => {
+      try {
+        const result = await buyModelAccess(model.id);
+        if (result.success) {
+          setHasModelAccess(true);
+          
+          // Save purchase to database
+          if (user?.id) {
+            await supabase.from('model_purchases').insert({
+              user_id: user.id,
+              model_id: model.id,
+              model_cid: model.cid,
+              model_name: model.name,
+              model_price: model.price,
+              tx_hash: result.txHash || null,
+            });
+          }
+          
+          toast({
+            title: 'Purchase Successful!',
+            description: `You now have access to ${model.name}. Transaction: ${result.txHash?.slice(0, 10)}...`,
+          });
+        } else {
+          toast({
+            title: 'Purchase Failed',
+            description: result.error || 'Failed to purchase model access',
+            variant: 'destructive',
           });
         }
-        
+      } catch (error: any) {
         toast({
-          title: 'Purchase Successful!',
-          description: `You now have access to ${model.name}. Transaction: ${result.txHash?.slice(0, 10)}...`,
-        });
-      } else {
-        toast({
-          title: 'Purchase Failed',
-          description: result.error || 'Failed to purchase model access',
+          title: 'Error',
+          description: error.message || 'An unexpected error occurred',
           variant: 'destructive',
         });
+      } finally {
+        setIsBuying(false);
       }
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsBuying(false);
-    }
+    });
   };
 
   const handleDownload = async () => {
