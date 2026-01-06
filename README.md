@@ -1,73 +1,76 @@
-# Welcome to your Lovable project
+# VaultNet UI
 
-## Project info
+Hey folks! So, I built this little project called VaultNet UI because I got tired of AI models being locked away in silos. Imagine a place where anyone can upload their cool AI stuff, vote on it like Reddit, and even trade it on the blockchain. That's VaultNet – a decentralized marketplace for models and datasets, all wrapped in a snappy React frontend.
 
-**URL**: https://lovable.dev/projects/50fbda1a-6a8d-4789-946c-23962e1484ac
+## What's the Big Idea?
 
-## How can I edit this code?
+VaultNet is my take on democratizing AI. No more gatekeepers – users get to:
+- Hunt for models in a searchable marketplace
+- Drop their own creations and datasets
+- Cast votes to build trust scores (because who trusts unvoted models?)
+- Hook up their crypto wallets for real on-chain magic
+- Tweak their profiles and dashboards like it's their personal playground
 
-There are several ways of editing your application.
+Under the hood, it's blockchain for that sweet transparency, IPFS for storing files without Big Brother watching, and Supabase handling the backend grunt work.
 
-**Use Lovable**
+## Tech Stack Under the Hood
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/50fbda1a-6a8d-4789-946c-23962e1484ac) and start prompting.
+- **Frontend**: React with TypeScript (because who wants runtime surprises?), Vite to make builds lightning-fast
+- **Styling**: Tailwind CSS for quick designs + shadcn/ui for those polished components
+- **Backend Vibes**: Supabase for the database (it's like Firebase but cooler), Firebase for auth, IPFS for decentralized file storage
+- **Blockchain Stuff**: Web3.js to connect wallets and handle voting on-chain
+- **Extras**: ESLint to keep the code clean, PostCSS for style magic
 
-Changes made via Lovable will be committed automatically to this repo.
+## Let's Get This Party Started
 
-**Use your preferred IDE**
+Wanna run it locally? Cool, grab Node.js first (nvm is your friend for versions).
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. **Grab the code**:
+   ```bash
+   git clone <your-repo-url>
+   cd vaultnet-ui
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. **Install the goodies**:
+   ```bash
+   npm install
+   # Or if you're team Bun:
+   bun install
+   ```
 
-Follow these steps:
+3. **Env setup time**:
+   Whip up a `.env` file in the root. Toss in your Supabase URL, Firebase keys, and whatever else the code needs. Peek at the source for clues.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+4. **Fire it up**:
+   ```bash
+   npm run dev
+   ```
+   Boom! Hit http://localhost:5173 and you're in the game.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Shipping to Production
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+Ready to launch? Easy peasy:
+```bash
+npm run build
 ```
+Your optimized files will be chilling in the `dist` folder. Deploy wherever floats your boat.
 
-**Edit a file directly in GitHub**
+## How's It Organized?
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `src/components/`: All the reusable UI pieces, like Lego blocks
+- `src/pages/`: The main screens – Dashboard, Marketplace, you name it
+- `src/contexts/`: React contexts for handling auth and global state
+- `src/lib/`: Handy utils and integrations (IPFS, web3, etc.)
+- `supabase/`: Backend functions and database migrations
 
-**Use GitHub Codespaces**
+## Wanna Chip In?
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Got a bug or a wild idea? Slam an issue or PR my way. Let's collaborate! Just keep things tidy, add some tests if you can, and we'll be golden.
 
-## What technologies are used for this project?
+## License Stuff
 
-This project is built with:
+MIT license – go wild, fork it, make it your own. No strings attached.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/50fbda1a-6a8d-4789-946c-23962e1484ac) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Made with love, endless debugging sessions, and way too much coffee. If this sparks joy, give it a star on GitHub!
