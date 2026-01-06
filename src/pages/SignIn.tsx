@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import authBackground from '@/assets/auth-background.jpg';
+import { AuthSkeleton } from '@/components/skeletons/PageSkeletons';
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18">
     <path
@@ -44,6 +45,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -51,6 +53,15 @@ export default function SignIn() {
   const { toast } = useToast();
   const { signIn, signInWithGoogle, resetPassword } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPageLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (pageLoading) {
+    return <AuthSkeleton />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

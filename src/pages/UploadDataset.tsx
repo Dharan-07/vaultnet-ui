@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Database, FileUp, X } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
@@ -12,11 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { getDatasetCategories } from '@/data/mockDatasets';
+import { UploadDatasetSkeleton } from '@/components/skeletons/PageSkeletons';
 
 const UploadDataset = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const categories = getDatasetCategories();
+  const [pageLoading, setPageLoading] = useState(true);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -28,6 +30,15 @@ const UploadDataset = () => {
   const [tagInput, setTagInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPageLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (pageLoading) {
+    return <UploadDatasetSkeleton />;
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));

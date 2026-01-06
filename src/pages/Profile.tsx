@@ -14,6 +14,7 @@ import { useOnChainModels } from '@/hooks/useOnChainModels';
 import { supabase } from '@/integrations/supabase/client';
 import { downloadFromIPFS } from '@/lib/ipfs';
 import { Link } from 'react-router-dom';
+import { ProfileSkeleton } from '@/components/skeletons/PageSkeletons';
 
 interface PurchasedModel {
   id: string;
@@ -36,13 +37,22 @@ const Profile = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [hoveredStat, setHoveredStat] = useState<number | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [purchasedModels, setPurchasedModels] = useState<PurchasedModel[]>([]);
   const [loadingPurchases, setLoadingPurchases] = useState(true);
   const [downloadingModel, setDownloadingModel] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsLoaded(true);
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+      setIsLoaded(true);
+    }, 600);
+    return () => clearTimeout(timer);
   }, []);
+
+  if (pageLoading) {
+    return <ProfileSkeleton />;
+  }
 
   // Fetch purchased models
   useEffect(() => {
