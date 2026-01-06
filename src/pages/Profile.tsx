@@ -122,9 +122,14 @@ const Profile = () => {
     }
   };
 
-  const myModels = models.filter(
-    m => walletAddress && m.uploader.toLowerCase() === walletAddress.toLowerCase()
-  );
+  // Filter models uploaded by current user (using connected wallet OR saved wallet)
+  const myModels = models.filter(m => {
+    if (!m.uploader) return false;
+    const uploaderLower = m.uploader.toLowerCase();
+    const connectedMatch = walletAddress && uploaderLower === walletAddress.toLowerCase();
+    const savedMatch = user?.walletAddress && uploaderLower === user.walletAddress.toLowerCase();
+    return connectedMatch || savedMatch;
+  });
 
   const totalValue = myModels.reduce((sum, m) => sum + parseFloat(m.price || '0'), 0);
 
