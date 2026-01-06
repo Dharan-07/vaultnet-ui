@@ -67,13 +67,19 @@ const ModelDetails = () => {
     checkPurchaseStatus();
   }, [user?.id, id]);
 
-  // Check if current user is the uploader
+  // Check if current user is the uploader (using connected wallet OR saved wallet in profile)
   useEffect(() => {
-    const walletAddress = getWalletAddress();
-    if (model && walletAddress) {
-      setIsUploader(model.uploader.toLowerCase() === walletAddress.toLowerCase());
+    const connectedWallet = getWalletAddress();
+    const savedWallet = user?.walletAddress;
+    
+    if (model) {
+      const uploaderLower = model.uploader.toLowerCase();
+      const isUploaderByConnectedWallet = connectedWallet && uploaderLower === connectedWallet.toLowerCase();
+      const isUploaderBySavedWallet = savedWallet && uploaderLower === savedWallet.toLowerCase();
+      
+      setIsUploader(isUploaderByConnectedWallet || isUploaderBySavedWallet);
     }
-  }, [model]);
+  }, [model, user?.walletAddress]);
 
   const scanPhases = [
     { icon: FileSearch, text: 'Analyzing model structure...' },
