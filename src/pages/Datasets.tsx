@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { DatasetsSkeleton } from '@/components/skeletons/PageSkeletons';
 
 interface KaggleDataset {
   ref: string;
@@ -33,11 +34,16 @@ const Datasets = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [hoveredDatasetId, setHoveredDatasetId] = useState<string | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
-    setIsLoaded(true);
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+      setIsLoaded(true);
+    }, 600);
+    return () => clearTimeout(timer);
   }, []);
   
   const fetchDatasets = async () => {
@@ -116,6 +122,10 @@ const Datasets = () => {
       description: `Redirecting to download ${dataset.title}...`,
     });
   };
+
+  if (pageLoading) {
+    return <DatasetsSkeleton />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
