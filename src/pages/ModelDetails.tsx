@@ -231,16 +231,32 @@ const ModelDetails = () => {
       if (result.success) {
         setHasModelAccess(true);
         
-        // Save purchase to database
+        // Record purchase via server-side edge function for validation
         if (user?.id) {
-          await supabase.from('model_purchases').insert({
-            user_id: user.id,
-            model_id: model.id,
-            model_cid: model.cid,
-            model_name: model.name,
-            model_price: model.price,
-            tx_hash: result.txHash || null,
-          });
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/record-purchase`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  modelId: model.id,
+                  modelCid: model.cid,
+                  modelName: model.name,
+                  modelPrice: model.price,
+                  txHash: result.txHash || null,
+                }),
+              }
+            );
+
+            if (!response.ok) {
+              console.error('Failed to record purchase:', await response.text());
+            }
+          }
         }
         
         toast({
