@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,33 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("No authorization header provided");
+      return new Response(
+        JSON.stringify({ success: false, error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.error("Authentication failed:", authError?.message);
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid authentication" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Authenticated user: ${user.id}`);
+
     const PINATA_API_KEY = Deno.env.get("PINATA_API_KEY");
     const PINATA_SECRET_KEY = Deno.env.get("PINATA_SECRET_KEY");
 
@@ -26,7 +54,16 @@ serve(async (req) => {
       throw new Error("Missing fileData or fileName");
     }
 
-    console.log(`Uploading file: ${fileName}, type: ${fileType}`);
+    // Input validation
+    if (typeof fileData !== 'string' || fileData.length > 50 * 1024 * 1024) { // 50MB max base64
+      throw new Error("Invalid or too large file data");
+    }
+
+    if (typeof fileName !== 'string' || fileName.length > 255) {
+      throw new Error("Invalid file name");
+    }
+
+    console.log(`User ${user.id} uploading file: ${fileName}, type: ${fileType}`);
 
     // Decode base64 to binary
     const binaryString = atob(fileData);
@@ -42,9 +79,13 @@ serve(async (req) => {
     const pinataFormData = new FormData();
     pinataFormData.append("file", blob, fileName);
     
-    // Add metadata
+    // Add metadata with user info for tracking
     pinataFormData.append("pinataMetadata", JSON.stringify({
       name: fileName,
+      keyvalues: {
+        uploadedBy: user.id,
+        uploadedAt: new Date().toISOString()
+      }
     }));
 
     console.log("Sending to Pinata...");
@@ -66,7 +107,7 @@ serve(async (req) => {
     }
 
     const result = await response.json();
-    console.log("Pinata upload successful:", result.IpfsHash);
+    console.log(`Pinata upload successful for user ${user.id}:`, result.IpfsHash);
 
     return new Response(
       JSON.stringify({
