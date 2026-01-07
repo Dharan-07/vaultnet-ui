@@ -22,6 +22,12 @@ export interface ModelMetadata {
  */
 export async function uploadFileToIPFS(file: File): Promise<string> {
   try {
+    // Verify user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error("Authentication required to upload files");
+    }
+
     // Convert file to base64
     const arrayBuffer = await file.arrayBuffer();
     const base64 = btoa(
@@ -36,6 +42,9 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
         fileData: base64,
         fileName: file.name,
         fileType: file.type,
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
       },
     });
 
@@ -72,6 +81,12 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
  */
 export async function uploadMetadataToIPFS(metadata: ModelMetadata): Promise<string> {
   try {
+    // Verify user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error("Authentication required to upload metadata");
+    }
+
     const metadataJson = JSON.stringify(metadata, null, 2);
     const base64 = btoa(unescape(encodeURIComponent(metadataJson)));
 
@@ -80,6 +95,9 @@ export async function uploadMetadataToIPFS(metadata: ModelMetadata): Promise<str
         fileData: base64,
         fileName: "metadata.json",
         fileType: "application/json",
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
       },
     });
 
