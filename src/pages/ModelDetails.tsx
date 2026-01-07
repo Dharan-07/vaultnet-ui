@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Download, ShoppingCart, ExternalLink, Copy, Check, Loader2, LinkIcon, Shield, FileSearch, Bug, Fingerprint, CheckCircle, Lock } from 'lucide-react';
+import { Download, ShoppingCart, ExternalLink, Copy, Check, Loader2, LinkIcon, Shield, FileSearch, Bug, Fingerprint, CheckCircle, Lock, AlertTriangle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,16 @@ import { TrustScoreBadge } from '@/components/TrustScoreBadge';
 import { VotingButtons } from '@/components/VotingButtons';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface DisplayModel {
   id: number;
@@ -46,6 +56,7 @@ const ModelDetails = () => {
   const [scanPhase, setScanPhase] = useState(0);
   const [scanProgress, setScanProgress] = useState(0);
   const [isUploader, setIsUploader] = useState(false);
+  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
 
   // Check if user has already purchased this model
   useEffect(() => {
@@ -198,7 +209,7 @@ const ModelDetails = () => {
     ...(model.versionCount > 1 ? [{ version: `v${model.versionCount - 1}.0.0`, cid: 'QmPreviousCID...', date: '2024-01-10', changes: 'Previous version' }] : []),
   ];
 
-  const handleBuyAccess = async () => {
+  const handlePurchaseClick = () => {
     const walletAddress = getWalletAddress();
     if (!walletAddress) {
       toast({
@@ -208,7 +219,11 @@ const ModelDetails = () => {
       });
       return;
     }
+    setShowPurchaseDialog(true);
+  };
 
+  const handleConfirmPurchase = async () => {
+    setShowPurchaseDialog(false);
     setIsBuying(true);
     
     try {
@@ -374,6 +389,36 @@ const ModelDetails = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
       {isScanning && <ScanningOverlay />}
+      
+      {/* Purchase Confirmation Dialog */}
+      <AlertDialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-primary" />
+              Confirm Purchase
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>You are about to purchase access to:</p>
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <p className="font-semibold text-foreground">{model?.name}</p>
+                <p className="text-2xl font-bold text-primary">{model?.price} ETH</p>
+              </div>
+              <p className="text-sm">
+                This transaction will be processed on the blockchain and cannot be reversed.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmPurchase} className="gap-2">
+              <ShoppingCart className="w-4 h-4" />
+              Confirm Purchase
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Navbar />
 
       <div className="container mx-auto px-4 py-8 flex-1">
@@ -425,7 +470,7 @@ const ModelDetails = () => {
             isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}>
             {model.onChain ? (
-              <Button size="lg" onClick={handleBuyAccess} disabled={isBuying || hasModelAccess} className="gap-2 transition-all duration-300 hover:shadow-lg hover:scale-105">
+              <Button size="lg" onClick={handlePurchaseClick} disabled={isBuying || hasModelAccess} className="gap-2 transition-all duration-300 hover:shadow-lg hover:scale-105">
                 {isBuying ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
                 {hasModelAccess ? 'Access Granted' : isBuying ? 'Processing...' : `Buy Access (${model.price} ETH)`}
               </Button>
