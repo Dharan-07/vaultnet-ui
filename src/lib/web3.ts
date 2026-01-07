@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { logger } from '@/lib/logger';
 
 // VaultNet Contract Configuration
 const CONTRACT_ADDRESS = '0x90DCb7bAA3c1D67eCF0B40B892D4198BC0c1E024';
@@ -86,8 +87,8 @@ export async function connectWallet(): Promise<string> {
     }
 
     return userAddress;
-  } catch (error: any) {
-    console.error('Error connecting wallet:', error);
+  } catch (error: unknown) {
+    logger.error('Error connecting wallet:', error);
     throw error;
   }
 }
@@ -127,11 +128,12 @@ export async function uploadModel(
       txHash: receipt.hash,
       modelId: modelId ? Number(modelId) : undefined,
     };
-  } catch (error: any) {
-    console.error('Error uploading model:', error);
+  } catch (error: unknown) {
+    logger.error('Error uploading model:', error);
+    const err = error as { reason?: string; message?: string };
     return {
       success: false,
-      error: error.reason || error.message || 'Failed to upload model',
+      error: err.reason || err.message || 'Failed to upload model',
     };
   }
 }
@@ -145,7 +147,7 @@ export async function getModelCount(): Promise<number> {
     const count = await contract.modelCounter();
     return Number(count);
   } catch (error) {
-    console.error('Error getting model count:', error);
+    logger.error('Error getting model count:', error);
     return 0;
   }
 }
@@ -171,7 +173,7 @@ export async function getModel(modelId: number): Promise<ModelData | null> {
       exists: model.exists,
     };
   } catch (error) {
-    console.error('Error getting model:', error);
+    logger.error('Error getting model:', error);
     return null;
   }
 }
@@ -199,11 +201,12 @@ export async function buyModelAccess(
       success: true,
       txHash: receipt.hash,
     };
-  } catch (error: any) {
-    console.error('Error buying model:', error);
+  } catch (error: unknown) {
+    logger.error('Error buying model:', error);
+    const err = error as { reason?: string; message?: string };
     return {
       success: false,
-      error: error.reason || error.message || 'Failed to buy model',
+      error: err.reason || err.message || 'Failed to buy model',
     };
   }
 }
@@ -225,11 +228,12 @@ export async function updateModel(
       success: true,
       txHash: receipt.hash,
     };
-  } catch (error: any) {
-    console.error('Error updating model:', error);
+  } catch (error: unknown) {
+    logger.error('Error updating model:', error);
+    const err = error as { reason?: string; message?: string };
     return {
       success: false,
-      error: error.reason || error.message || 'Failed to update model',
+      error: err.reason || err.message || 'Failed to update model',
     };
   }
 }
@@ -248,7 +252,7 @@ export async function getAllModels(): Promise<ModelData[]> {
     
     return models;
   } catch (error) {
-    console.error('Error getting all models:', error);
+    logger.error('Error getting all models:', error);
     return [];
   }
 }
@@ -261,7 +265,7 @@ if (typeof window !== 'undefined' && window.ethereum) {
       signer = null;
     } else {
       userAddress = accounts[0];
-      connectWallet().catch(console.error);
+      connectWallet().catch((error) => logger.error('Error reconnecting wallet:', error));
     }
   });
 

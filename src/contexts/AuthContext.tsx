@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
-  User as FirebaseUser,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -14,6 +13,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { logger } from '@/lib/logger';
 
 interface User {
   id: string;
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }).catch(() => {});
       }
     }).catch((error) => {
-      console.error('Redirect result error:', error);
+      logger.error('Redirect result error:', error);
     });
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
