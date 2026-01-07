@@ -45,10 +45,14 @@ const Datasets = () => {
     setError(null);
     
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('kaggle-datasets', {
-        body: null,
-        method: 'GET',
-      });
+      // Get current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setError('Please sign in to view datasets');
+        setLoading(false);
+        return;
+      }
 
       // Build URL with params for GET request
       const params = new URLSearchParams({
@@ -63,12 +67,16 @@ const Datasets = () => {
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kaggle-datasets?${params.toString()}`,
         {
           headers: {
+            'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },
         }
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Please sign in to view datasets');
+        }
         throw new Error('Failed to fetch datasets');
       }
 
@@ -84,7 +92,7 @@ const Datasets = () => {
       setError(err instanceof Error ? err.message : 'Failed to load datasets');
       toast({
         title: "Error",
-        description: "Failed to load datasets from Kaggle",
+        description: err instanceof Error ? err.message : "Failed to load datasets from Kaggle",
         variant: "destructive",
       });
     } finally {

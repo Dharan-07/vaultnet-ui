@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +13,34 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create Supabase client and verify user
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.error('Invalid authentication:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Authenticated user: ${user.id}`);
+
     const kaggleUsername = Deno.env.get('KAGGLE_USERNAME');
     const kaggleApiKey = Deno.env.get('KAGGLE_API_KEY');
 
@@ -28,10 +57,30 @@ serve(async (req) => {
     const page = url.searchParams.get('page') || '1';
     const sortBy = url.searchParams.get('sortBy') || 'hottest';
 
+    // Input validation
+    const pageNum = parseInt(page, 10);
+    if (isNaN(pageNum) || pageNum < 1 || pageNum > 100) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid page parameter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const validSortOptions = ['hottest', 'votes', 'updated', 'active'];
+    if (!validSortOptions.includes(sortBy)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid sortBy parameter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Sanitize search query (limit length)
+    const sanitizedSearch = search.slice(0, 100);
+
     // Build Kaggle API URL
-    let kaggleUrl = `https://www.kaggle.com/api/v1/datasets/list?page=${page}&sortBy=${sortBy}`;
-    if (search) {
-      kaggleUrl += `&search=${encodeURIComponent(search)}`;
+    let kaggleUrl = `https://www.kaggle.com/api/v1/datasets/list?page=${pageNum}&sortBy=${sortBy}`;
+    if (sanitizedSearch) {
+      kaggleUrl += `&search=${encodeURIComponent(sanitizedSearch)}`;
     }
 
     console.log(`Fetching from Kaggle: ${kaggleUrl}`);
