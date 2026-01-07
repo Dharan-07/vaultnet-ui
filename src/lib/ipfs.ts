@@ -2,21 +2,25 @@
  * IPFS integration using Pinata
  */
 
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/lib/logger";
 
-export interface ModelMetadata {
-  name: string;
-  description: string;
-  category: string;
-  tags: string[];
-  version: string;
-  author: string;
-  license: string;
-  fileSize: string;
-  uploadDate: string;
-  fileCid?: string; // CID of the actual model file
-}
+// Zod schema for validating IPFS metadata from untrusted sources
+const ModelMetadataSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().min(1).max(5000),
+  category: z.string().min(1).max(100),
+  tags: z.array(z.string().max(50)).max(20),
+  version: z.string().min(1).max(50),
+  author: z.string().min(1).max(200),
+  license: z.string().min(1).max(100),
+  fileSize: z.string().max(50),
+  uploadDate: z.string().max(100),
+  fileCid: z.string().max(200).optional(),
+});
+
+export type ModelMetadata = z.infer<typeof ModelMetadataSchema>;
 
 // Maximum file size for uploads (30MB raw = ~40MB base64)
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
@@ -156,10 +160,16 @@ export function getPublicIPFSUrl(cid: string): string {
 }
 
 /**
- * Fetch metadata from IPFS using CID
+ * Fetch metadata from IPFS using CID with validation
  */
 export async function fetchMetadataFromIPFS(cid: string): Promise<ModelMetadata | null> {
   try {
+    // Validate CID format (basic check for IPFS CID pattern)
+    if (!cid || !/^[a-zA-Z0-9]{46,59}$/.test(cid)) {
+      logger.error("Invalid CID format:", cid);
+      return null;
+    }
+
     // Try Pinata gateway first
     let response = await fetch(getIPFSUrl(cid));
     
@@ -172,8 +182,16 @@ export async function fetchMetadataFromIPFS(cid: string): Promise<ModelMetadata 
       throw new Error("Failed to fetch from IPFS");
     }
     
-    const metadata = await response.json();
-    return metadata as ModelMetadata;
+    const rawData = await response.json();
+    
+    // Validate metadata against schema
+    const result = ModelMetadataSchema.safeParse(rawData);
+    if (!result.success) {
+      logger.error("Invalid metadata format from IPFS:", result.error.message);
+      return null;
+    }
+    
+    return result.data;
   } catch (error) {
     logger.error("Error fetching from IPFS:", error);
     return null;
