@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logger from '@/lib/logger';
 import { Upload as UploadIcon, FileUp, Loader2, CheckCircle, Shield, Scan } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -362,7 +363,7 @@ const Upload = () => {
       try {
         fileCid = await uploadFileToIPFS(formData.file);
         setUploadProgress(30);
-        console.log('Model file uploaded to IPFS:', fileCid);
+        logger.log('Model file uploaded to IPFS:', fileCid);
       } catch (ipfsError: any) {
         const errorMsg = ipfsError.message || 'Unknown IPFS error';
         throw new Error(`IPFS Upload Failed: ${errorMsg}. Please check that Pinata API keys are configured correctly.`);
@@ -393,7 +394,7 @@ const Upload = () => {
       try {
         metadataCid = await uploadMetadataToIPFS(metadata);
         setUploadProgress(60);
-        console.log('Metadata uploaded to IPFS:', metadataCid);
+        logger.log('Metadata uploaded to IPFS:', metadataCid);
       } catch (metaError: any) {
         const errorMsg = metaError.message || 'Unknown metadata error';
         throw new Error(`Metadata Upload Failed: ${errorMsg}. The model file was uploaded but metadata storage failed.`);
@@ -435,7 +436,7 @@ const Upload = () => {
         throw new Error(blockchainError);
       }
     } catch (error: any) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast({
         title: 'Upload Failed',
         description: error.message || 'An unexpected error occurred during upload',

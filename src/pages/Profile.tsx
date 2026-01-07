@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Wallet, Mail, Calendar, Shield, ExternalLink, Copy, Check, Download, Package, ShoppingBag, Loader2 } from 'lucide-react';
+import logger from '@/lib/logger';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -62,7 +63,7 @@ const Profile = () => {
         if (error) throw error;
         setPurchasedModels(data || []);
       } catch (error) {
-        console.error('Error fetching purchases:', error);
+        logger.error('Error fetching purchases:', error);
       } finally {
         setLoadingPurchases(false);
       }
