@@ -211,46 +211,43 @@ const ModelDetails = () => {
 
     setIsBuying(true);
     
-    // Trigger scan animation during purchase
-    triggerScan(async () => {
-      try {
-        const result = await buyModelAccess(model.id);
-        if (result.success) {
-          setHasModelAccess(true);
-          
-          // Save purchase to database
-          if (user?.id) {
-            await supabase.from('model_purchases').insert({
-              user_id: user.id,
-              model_id: model.id,
-              model_cid: model.cid,
-              model_name: model.name,
-              model_price: model.price,
-              tx_hash: result.txHash || null,
-            });
-          }
-          
-          toast({
-            title: 'Purchase Successful!',
-            description: `You now have access to ${model.name}. Transaction: ${result.txHash?.slice(0, 10)}...`,
-          });
-        } else {
-          toast({
-            title: 'Purchase Failed',
-            description: result.error || 'Failed to purchase model access',
-            variant: 'destructive',
+    try {
+      const result = await buyModelAccess(model.id);
+      if (result.success) {
+        setHasModelAccess(true);
+        
+        // Save purchase to database
+        if (user?.id) {
+          await supabase.from('model_purchases').insert({
+            user_id: user.id,
+            model_id: model.id,
+            model_cid: model.cid,
+            model_name: model.name,
+            model_price: model.price,
+            tx_hash: result.txHash || null,
           });
         }
-      } catch (error: any) {
+        
         toast({
-          title: 'Error',
-          description: error.message || 'An unexpected error occurred',
+          title: 'Purchase Successful!',
+          description: `You now have access to ${model.name}. Transaction: ${result.txHash?.slice(0, 10)}...`,
+        });
+      } else {
+        toast({
+          title: 'Purchase Failed',
+          description: result.error || 'Failed to purchase model access',
           variant: 'destructive',
         });
-      } finally {
-        setIsBuying(false);
       }
-    });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsBuying(false);
+    }
   };
 
   const handleDownload = async () => {
