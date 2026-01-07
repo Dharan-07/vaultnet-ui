@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import authBackground from '@/assets/auth-background.jpg';
-import { AuthSkeleton } from '@/components/skeletons/PageSkeletons';
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18">
     <path
@@ -53,20 +52,10 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { toast } = useToast();
   const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const timer = setTimeout(() => setPageLoading(false), 600);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (pageLoading) {
-    return <AuthSkeleton />;
-  }
 
   const passwordRequirements = {
     minLength: formData.password.length >= 8,

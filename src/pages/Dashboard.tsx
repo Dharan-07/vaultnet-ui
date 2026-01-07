@@ -14,14 +14,12 @@ import { fetchMetadataFromIPFS, downloadFromIPFS, getIPFSUrl, ModelMetadata } fr
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DashboardSkeleton } from '@/components/skeletons/PageSkeletons';
 
 interface EnrichedModel extends ModelData {
   metadata?: ModelMetadata;
 }
 
 const Dashboard = () => {
-  const [pageLoading, setPageLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
   const walletAddress = getWalletAddress();
@@ -65,17 +63,12 @@ const Dashboard = () => {
       });
     } finally {
       setIsLoading(false);
-      setPageLoading(false);
     }
   };
 
   useEffect(() => {
     fetchModels();
   }, [walletAddress]);
-
-  if (pageLoading) {
-    return <DashboardSkeleton />;
-  }
 
   const handleUpdateVersion = async () => {
     if (!selectedModelId || !newCid) return;

@@ -15,7 +15,6 @@ import { TrustScoreBadge } from '@/components/TrustScoreBadge';
 import { VotingButtons } from '@/components/VotingButtons';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ModelDetailsSkeleton } from '@/components/skeletons/PageSkeletons';
 
 interface DisplayModel {
   id: number;
@@ -40,7 +39,6 @@ const ModelDetails = () => {
   const [copiedCid, setCopiedCid] = useState(false);
   const [hasModelAccess, setHasModelAccess] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [pageLoading, setPageLoading] = useState(true);
   const [model, setModel] = useState<DisplayModel | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredTag, setHoveredTag] = useState<number | null>(null);
@@ -69,19 +67,13 @@ const ModelDetails = () => {
     checkPurchaseStatus();
   }, [user?.id, id]);
 
-  // Check if current user is the uploader (using connected wallet OR saved wallet in profile)
+  // Check if current user is the uploader
   useEffect(() => {
-    const connectedWallet = getWalletAddress();
-    const savedWallet = user?.walletAddress;
-    
-    if (model) {
-      const uploaderLower = model.uploader.toLowerCase();
-      const isUploaderByConnectedWallet = connectedWallet && uploaderLower === connectedWallet.toLowerCase();
-      const isUploaderBySavedWallet = savedWallet && uploaderLower === savedWallet.toLowerCase();
-      
-      setIsUploader(isUploaderByConnectedWallet || isUploaderBySavedWallet);
+    const walletAddress = getWalletAddress();
+    if (model && walletAddress) {
+      setIsUploader(model.uploader.toLowerCase() === walletAddress.toLowerCase());
     }
-  }, [model, user?.walletAddress]);
+  }, [model]);
 
   const scanPhases = [
     { icon: FileSearch, text: 'Analyzing model structure...' },
@@ -171,7 +163,16 @@ const ModelDetails = () => {
   }, [id]);
 
   if (loading) {
-    return <ModelDetailsSkeleton />;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="ml-3">Loading model...</span>
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
   if (!model) {

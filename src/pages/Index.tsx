@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Shield, Zap } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
@@ -6,116 +6,20 @@ import { SearchBar } from '@/components/SearchBar';
 import { ModelCard } from '@/components/ModelCard';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { getFeaturedModels, getTrendingModels } from '@/data/mockData';
 
-const IndexSkeleton = () => (
-  <div className="min-h-screen flex flex-col animate-fade-in">
-    {/* Navbar Skeleton */}
-    <div className="h-16 border-b bg-background">
-      <div className="container mx-auto px-4 h-full flex items-center justify-between">
-        <Skeleton className="h-8 w-32" />
-        <div className="flex gap-4">
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-20" />
-        </div>
-      </div>
-    </div>
-
-    {/* Hero Skeleton */}
-    <section className="gradient-primary py-20">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <Skeleton className="h-14 w-3/4 mx-auto bg-white/20" />
-          <Skeleton className="h-8 w-1/2 mx-auto bg-white/20" />
-          <Skeleton className="h-12 w-96 mx-auto bg-white/20 rounded-full" />
-          <div className="flex justify-center gap-4 pt-4">
-            <Skeleton className="h-12 w-36 bg-white/20" />
-            <Skeleton className="h-12 w-36 bg-white/20" />
-          </div>
-        </div>
-      </div>
-    </section>
-
-    {/* Features Skeleton */}
-    <section className="py-16 bg-muted/30">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-3 gap-8">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="text-center space-y-4">
-              <Skeleton className="w-16 h-16 rounded-full mx-auto" />
-              <Skeleton className="h-6 w-40 mx-auto" />
-              <Skeleton className="h-4 w-56 mx-auto" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    {/* Featured Models Skeleton */}
-    <section className="py-16">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-8 w-24" />
-        </div>
-        <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-lg border bg-card p-4 space-y-4">
-              <Skeleton className="h-40 w-full rounded-md" />
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-full" />
-              <div className="flex justify-between">
-                <Skeleton className="h-6 w-20" />
-                <Skeleton className="h-6 w-16" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    {/* Footer Skeleton */}
-    <div className="mt-auto border-t py-8">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between">
-          <Skeleton className="h-6 w-32" />
-          <div className="flex gap-4">
-            <Skeleton className="h-6 w-16" />
-            <Skeleton className="h-6 w-16" />
-            <Skeleton className="h-6 w-16" />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 const Index = () => {
-  const [isLoading, setIsLoading] = useState(true);
   const featuredModels = getFeaturedModels();
   const trendingModels = getTrendingModels();
 
-  useEffect(() => {
-    // Simulate loading time for data fetching
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
-
   const handleSearch = (query: string) => {
     console.log('Searching for:', query);
+    // Navigate to marketplace with search query
     window.location.href = `/marketplace?q=${encodeURIComponent(query)}`;
   };
 
-  if (isLoading) {
-    return <IndexSkeleton />;
-  }
-
   return (
-    <div className="min-h-screen flex flex-col animate-fade-in">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
       {/* Hero Section */}

@@ -4,7 +4,6 @@ import { Database, Shield, Cpu, ArrowRight, ChevronDown, Users, Globe, Lock, Zap
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Spline from '@splinetool/react-spline';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { WelcomeSkeleton } from '@/components/skeletons/PageSkeletons';
 
 interface GridNode {
   id: number;
@@ -15,7 +14,6 @@ interface GridNode {
 
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
   const [typedText, setTypedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
@@ -44,11 +42,7 @@ const Welcome = () => {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPageLoading(false);
-      setIsLoaded(true);
-    }, 800);
-    return () => clearTimeout(timer);
+    setIsLoaded(true);
   }, []);
 
   // Typing effect for tagline
@@ -102,10 +96,6 @@ const Welcome = () => {
       observers.forEach((observer) => observer.disconnect());
     };
   }, []);
-
-  if (pageLoading) {
-    return <WelcomeSkeleton />;
-  }
 
   const features = [
     { icon: Database, label: 'Decentralized', description: 'Fully distributed network' },

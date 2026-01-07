@@ -15,7 +15,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getWalletAddress, uploadModel } from '@/lib/web3';
 import { uploadFileToIPFS, uploadMetadataToIPFS, ModelMetadata } from '@/lib/ipfs';
 import { getCategories } from '@/data/mockData';
-import { UploadSkeleton } from '@/components/skeletons/PageSkeletons';
 
 // Scanning Popup Modal Component
 const ScanningPopup = ({ fileName, fileSize, onComplete }: { fileName: string; fileSize: string; onComplete?: () => void }) => {
@@ -271,7 +270,6 @@ const Upload = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStep, setUploadStep] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
   const [isDragActive, setIsDragActive] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   
@@ -287,18 +285,10 @@ const Upload = () => {
   });
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPageLoading(false);
-      setIsLoaded(true);
-    }, 600);
-    return () => clearTimeout(timer);
+    setIsLoaded(true);
   }, []);
 
   const categories = getCategories();
-
-  if (pageLoading) {
-    return <UploadSkeleton />;
-  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

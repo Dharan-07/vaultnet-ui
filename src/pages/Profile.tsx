@@ -14,7 +14,6 @@ import { useOnChainModels } from '@/hooks/useOnChainModels';
 import { supabase } from '@/integrations/supabase/client';
 import { downloadFromIPFS } from '@/lib/ipfs';
 import { Link } from 'react-router-dom';
-import { ProfileSkeleton } from '@/components/skeletons/PageSkeletons';
 
 interface PurchasedModel {
   id: string;
@@ -37,22 +36,13 @@ const Profile = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [hoveredStat, setHoveredStat] = useState<number | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
   const [purchasedModels, setPurchasedModels] = useState<PurchasedModel[]>([]);
   const [loadingPurchases, setLoadingPurchases] = useState(true);
   const [downloadingModel, setDownloadingModel] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPageLoading(false);
-      setIsLoaded(true);
-    }, 600);
-    return () => clearTimeout(timer);
+    setIsLoaded(true);
   }, []);
-
-  if (pageLoading) {
-    return <ProfileSkeleton />;
-  }
 
   // Fetch purchased models
   useEffect(() => {
@@ -132,14 +122,9 @@ const Profile = () => {
     }
   };
 
-  // Filter models uploaded by current user (using connected wallet OR saved wallet)
-  const myModels = models.filter(m => {
-    if (!m.uploader) return false;
-    const uploaderLower = m.uploader.toLowerCase();
-    const connectedMatch = walletAddress && uploaderLower === walletAddress.toLowerCase();
-    const savedMatch = user?.walletAddress && uploaderLower === user.walletAddress.toLowerCase();
-    return connectedMatch || savedMatch;
-  });
+  const myModels = models.filter(
+    m => walletAddress && m.uploader.toLowerCase() === walletAddress.toLowerCase()
+  );
 
   const totalValue = myModels.reduce((sum, m) => sum + parseFloat(m.price || '0'), 0);
 

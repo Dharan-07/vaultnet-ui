@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useOnChainModels, OnChainModel } from '@/hooks/useOnChainModels';
 import { mockModels, filterModels, getCategories } from '@/data/mockData';
-import { MarketplaceSkeleton } from '@/components/skeletons/PageSkeletons';
 
 const Marketplace = () => {
   const [searchParams] = useSearchParams();
@@ -22,7 +21,6 @@ const Marketplace = () => {
   const [sortBy, setSortBy] = useState<string>('downloads');
   const [showOnChainOnly, setShowOnChainOnly] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   
   const { models: onChainModels, loading, error, refetch } = useOnChainModels();
@@ -30,16 +28,8 @@ const Marketplace = () => {
   const categories = getCategories();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPageLoading(false);
-      setIsLoaded(true);
-    }, 600);
-    return () => clearTimeout(timer);
+    setIsLoaded(true);
   }, []);
-
-  if (pageLoading) {
-    return <MarketplaceSkeleton />;
-  }
 
   // Combine mock models with on-chain models
   const allModels: OnChainModel[] = [
