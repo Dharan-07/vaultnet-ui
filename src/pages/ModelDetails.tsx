@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Download, ShoppingCart, ExternalLink, Copy, Check, Loader2, LinkIcon, Shield, FileSearch, Bug, Fingerprint, CheckCircle, Lock, AlertTriangle } from 'lucide-react';
+import logger from '@/lib/logger';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -158,7 +159,7 @@ const ModelDetails = () => {
           return;
         }
       } catch (error) {
-        console.log("Model not found on-chain, checking mock data");
+        logger.log("Model not found on-chain, checking mock data");
       }
       
       // Fall back to mock data
@@ -254,7 +255,7 @@ const ModelDetails = () => {
             );
 
             if (!response.ok) {
-              console.error('Failed to record purchase:', await response.text());
+              logger.error('Failed to record purchase:', await response.text());
             }
           }
         }
