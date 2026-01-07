@@ -426,7 +426,7 @@ const ModelDetails = () => {
           }`}>
             {model.onChain ? (
               <Button size="lg" onClick={handleBuyAccess} disabled={isBuying || hasModelAccess} className="gap-2 transition-all duration-300 hover:shadow-lg hover:scale-105">
-                <ShoppingCart className="w-5 h-5" />
+                {isBuying ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
                 {hasModelAccess ? 'Access Granted' : isBuying ? 'Processing...' : `Buy Access (${model.price} ETH)`}
               </Button>
             ) : (
