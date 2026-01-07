@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Shield, Zap } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { SearchBar } from '@/components/SearchBar';
@@ -9,13 +8,16 @@ import { Button } from '@/components/ui/button';
 import { getFeaturedModels, getTrendingModels } from '@/data/mockData';
 
 const Index = () => {
+  const navigate = useNavigate();
   const featuredModels = getFeaturedModels();
   const trendingModels = getTrendingModels();
 
   const handleSearch = (query: string) => {
-    console.log('Searching for:', query);
-    // Navigate to marketplace with search query
-    window.location.href = `/marketplace?q=${encodeURIComponent(query)}`;
+    // Sanitize and limit query length
+    const sanitized = query.slice(0, 100).trim();
+    if (sanitized) {
+      navigate(`/marketplace?q=${encodeURIComponent(sanitized)}`);
+    }
   };
 
   return (
