@@ -1,10 +1,29 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { Redis } from "https://esm.sh/@upstash/redis@1.28.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limiting configuration
+const RATE_LIMIT_REQUESTS = 20; // requests per window
+const RATE_LIMIT_WINDOW = 60; // seconds
+
+async function checkRateLimit(redis: Redis, identifier: string): Promise<{ allowed: boolean; remaining: number }> {
+  const key = `rate_limit:record-purchase:${identifier}`;
+  const current = await redis.incr(key);
+  
+  if (current === 1) {
+    await redis.expire(key, RATE_LIMIT_WINDOW);
+  }
+  
+  return {
+    allowed: current <= RATE_LIMIT_REQUESTS,
+    remaining: Math.max(0, RATE_LIMIT_REQUESTS - current),
+  };
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,6 +32,31 @@ serve(async (req) => {
   }
 
   try {
+    // Initialize Redis for rate limiting
+    const redis = new Redis({
+      url: Deno.env.get("UPSTASH_REDIS_REST_URL")!,
+      token: Deno.env.get("UPSTASH_REDIS_REST_TOKEN")!,
+    });
+
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
+    const { allowed, remaining } = await checkRateLimit(redis, clientIP);
+    
+    if (!allowed) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json",
+            "X-RateLimit-Remaining": remaining.toString(),
+          } 
+        }
+      );
+    }
+
     // Verify authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
