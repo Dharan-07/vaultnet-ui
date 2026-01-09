@@ -59,7 +59,7 @@ export type Database = {
           id: string
           name: string
           tags: string[] | null
-          uploaded_by: string | null
+          uploaded_by: string
         }
         Insert: {
           category: string
@@ -72,7 +72,7 @@ export type Database = {
           id?: string
           name: string
           tags?: string[] | null
-          uploaded_by?: string | null
+          uploaded_by: string
         }
         Update: {
           category?: string
@@ -85,7 +85,7 @@ export type Database = {
           id?: string
           name?: string
           tags?: string[] | null
-          uploaded_by?: string | null
+          uploaded_by?: string
         }
         Relationships: []
       }
