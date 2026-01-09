@@ -94,7 +94,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_model_purchases: {
+        Args: never
+        Returns: {
+          id: string
+          model_cid: string
+          model_id: number
+          model_name: string
+          model_price: string
+          purchased_at: string
+        }[]
+      }
+      has_purchased_model: { Args: { _model_id: number }; Returns: boolean }
+      list_dataset_catalog: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          downloads: number
+          file_size: number
+          format: string
+          id: string
+          name: string
+          tags: string[]
+        }[]
+      }
+      record_model_purchase: {
+        Args: {
+          _model_cid: string
+          _model_id: number
+          _model_name: string
+          _model_price: string
+          _tx_hash?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

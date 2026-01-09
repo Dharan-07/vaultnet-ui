@@ -23,7 +23,6 @@ interface PurchasedModel {
   model_name: string;
   model_price: string;
   purchased_at: string;
-  tx_hash: string | null;
 }
 
 const Profile = () => {
@@ -55,10 +54,7 @@ const Profile = () => {
       
       try {
         const { data, error } = await supabase
-          .from('model_purchases')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('purchased_at', { ascending: false });
+          .rpc('get_my_model_purchases');
         
         if (error) throw error;
         setPurchasedModels(data || []);
