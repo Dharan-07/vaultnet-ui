@@ -1,38 +1,41 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  updateProfile,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  sendPasswordResetEmail
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { logger } from '@/lib/logger';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
 
-interface User {
+// Validation schemas
+export const emailSchema = z.string().email('Invalid email address').max(255, 'Email too long');
+
+export const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(128, 'Password too long')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character');
+
+export const nameSchema = z.string().min(1, 'Name is required').max(100, 'Name too long');
+
+interface UserProfile {
   id: string;
   email: string;
   name: string;
   walletAddress?: string;
+  emailVerified: boolean;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: UserProfile | null;
+  session: Session | null;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error?: string; remainingAttempts?: number }>;
+  signUp: (name: string, email: string, password: string) => Promise<{ error?: string; requiresEmailVerification?: boolean }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error?: string }>;
   connectWallet: (walletAddress: string) => Promise<void>;
   disconnectWallet: () => Promise<void>;
-  isLoading: boolean;
+  resendVerificationEmail: () => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,207 +48,272 @@ export const useAuth = () => {
   return context;
 };
 
-const googleProvider = new GoogleAuthProvider();
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch user profile from profiles table
+  const fetchProfile = async (userId: string, userEmail: string, emailConfirmed: boolean) => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profile) {
+      setUser({
+        id: userId,
+        email: userEmail,
+        name: profile.name || '',
+        walletAddress: profile.wallet_address || undefined,
+        emailVerified: emailConfirmed,
+      });
+    } else {
+      setUser({
+        id: userId,
+        email: userEmail,
+        name: '',
+        emailVerified: emailConfirmed,
+      });
+    }
+  };
+
   useEffect(() => {
-    // Check for redirect result on mount
-    getRedirectResult(auth).then(async (result) => {
-      if (result?.user) {
-        const firebaseUser = result.user;
-        // Check if user exists in Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
         
-        if (!userDoc.exists()) {
-          // Create new user document for first-time Google sign-in
-          await setDoc(doc(db, 'users', firebaseUser.uid), {
-            name: firebaseUser.displayName || '',
-            email: firebaseUser.email,
-            createdAt: serverTimestamp(),
-            lastLogin: serverTimestamp(),
-            authProvider: 'google',
-          });
-        }
-        
-        // Store login event
-        await setDoc(doc(db, 'login', `${firebaseUser.uid}_${Date.now()}`), {
-          userId: firebaseUser.uid,
-          email: firebaseUser.email,
-          loginAt: serverTimestamp(),
-          authProvider: 'google',
-        });
-
-        // Update last login
-        await updateDoc(doc(db, 'users', firebaseUser.uid), {
-          lastLogin: serverTimestamp(),
-        }).catch(() => {});
-      }
-    }).catch((error) => {
-      logger.error('Redirect result error:', error);
-    });
-
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Fetch user data from Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            id: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            name: userData.name || firebaseUser.displayName || '',
-            walletAddress: userData.walletAddress || undefined,
-          });
+        if (currentSession?.user) {
+          // Defer profile fetch to avoid deadlock
+          setTimeout(() => {
+            fetchProfile(
+              currentSession.user.id,
+              currentSession.user.email || '',
+              !!currentSession.user.email_confirmed_at
+            );
+          }, 0);
         } else {
-          setUser({
-            id: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
-          });
+          setUser(null);
         }
-      } else {
-        setUser(null);
+        
+        setIsLoading(false);
       }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      
+      if (existingSession?.user) {
+        fetchProfile(
+          existingSession.user.id,
+          existingSession.user.email || '',
+          !!existingSession.user.email_confirmed_at
+        );
+      }
+      
       setIsLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    
-    // Store login event in login collection
-    await setDoc(doc(db, 'login', `${userCredential.user.uid}_${Date.now()}`), {
-      userId: userCredential.user.uid,
-      email: userCredential.user.email,
-      loginAt: serverTimestamp(),
-    });
-
-    // Update last login timestamp in users collection
-    await updateDoc(doc(db, 'users', userCredential.user.uid), {
-      lastLogin: serverTimestamp(),
-    }).catch(() => {
-      // Document might not exist yet, ignore error
-    });
-  };
-
-  const signUp = async (name: string, email: string, password: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(userCredential.user, { displayName: name });
-    
-    // Store user data in Firestore
-    await setDoc(doc(db, 'users', userCredential.user.uid), {
-      name,
-      email,
-      createdAt: serverTimestamp(),
-      lastLogin: serverTimestamp(),
-    });
-
-    setUser({
-      id: userCredential.user.uid,
-      email,
-      name,
-    });
-  };
-
-  const signInWithGoogle = async () => {
+  const signIn = async (email: string, password: string): Promise<{ error?: string; remainingAttempts?: number }> => {
     try {
-      // Try popup first
-      const result = await signInWithPopup(auth, googleProvider);
-      const firebaseUser = result.user;
-      
-      // Check if user exists in Firestore
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-      
-      if (!userDoc.exists()) {
-        // Create new user document for first-time Google sign-in
-        await setDoc(doc(db, 'users', firebaseUser.uid), {
-          name: firebaseUser.displayName || '',
-          email: firebaseUser.email,
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp(),
-          authProvider: 'google',
+      // Validate input
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
+        return { error: emailResult.error.errors[0].message };
+      }
+
+      // Call rate-limited auth edge function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, action: 'signin' }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { 
+          error: result.error || 'Sign in failed', 
+          remainingAttempts: result.remainingAttempts 
+        };
+      }
+
+      // Set the session from the response
+      if (result.session) {
+        await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
         });
       }
-      
-      // Store login event
-      await setDoc(doc(db, 'login', `${firebaseUser.uid}_${Date.now()}`), {
-        userId: firebaseUser.uid,
-        email: firebaseUser.email,
-        loginAt: serverTimestamp(),
-        authProvider: 'google',
-      });
 
-      // Update last login
-      await updateDoc(doc(db, 'users', firebaseUser.uid), {
-        lastLogin: serverTimestamp(),
-      }).catch(() => {});
-    } catch (error: any) {
-      // If popup is blocked or fails, fall back to redirect
-      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        throw error;
+      return {};
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return { error: 'An unexpected error occurred' };
+    }
+  };
+
+  const signUp = async (name: string, email: string, password: string): Promise<{ error?: string; requiresEmailVerification?: boolean }> => {
+    try {
+      // Validate inputs
+      const nameResult = nameSchema.safeParse(name);
+      if (!nameResult.success) {
+        return { error: nameResult.error.errors[0].message };
       }
+
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
+        return { error: emailResult.error.errors[0].message };
+      }
+
+      const passwordResult = passwordSchema.safeParse(password);
+      if (!passwordResult.success) {
+        return { error: passwordResult.error.errors[0].message };
+      }
+
+      // Call rate-limited auth edge function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, action: 'signup' }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { error: result.error || 'Sign up failed' };
+      }
+
+      // Update profile with name
+      if (result.user?.id) {
+        await supabase
+          .from('profiles')
+          .update({ name })
+          .eq('id', result.user.id);
+      }
+
+      if (result.requiresEmailVerification) {
+        return { requiresEmailVerification: true };
+      }
+
+      // Set the session if available (auto-confirm enabled)
+      if (result.session) {
+        await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        });
+      }
+
+      return {};
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { error: 'An unexpected error occurred' };
     }
   };
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
+    await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
   };
 
-  const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+  const resetPassword = async (email: string): Promise<{ error?: string }> => {
+    try {
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
+        return { error: emailResult.error.errors[0].message };
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/signin`,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return {};
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return { error: 'An unexpected error occurred' };
+    }
   };
 
   const connectWallet = async (walletAddress: string) => {
     if (!user) throw new Error('Must be logged in to connect wallet');
-    
-    // Store wallet connection event in wallets collection
-    await setDoc(doc(db, 'wallets', `${user.id}_${Date.now()}`), {
-      userId: user.id,
-      email: user.email,
-      walletAddress,
-      connectedAt: serverTimestamp(),
-    });
 
-    // Update wallet address in users collection
-    await updateDoc(doc(db, 'users', user.id), {
-      walletAddress,
-      walletConnectedAt: serverTimestamp(),
-    });
+    const { error } = await supabase
+      .from('profiles')
+      .update({ wallet_address: walletAddress })
+      .eq('id', user.id);
+
+    if (error) throw error;
 
     setUser({ ...user, walletAddress });
   };
 
   const disconnectWallet = async () => {
     if (!user) throw new Error('Must be logged in to disconnect wallet');
-    
-    // Remove wallet address from Firestore
-    await updateDoc(doc(db, 'users', user.id), {
-      walletAddress: null,
-      walletConnectedAt: null,
-    });
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ wallet_address: null })
+      .eq('id', user.id);
+
+    if (error) throw error;
 
     setUser({ ...user, walletAddress: undefined });
   };
 
+  const resendVerificationEmail = async (): Promise<{ error?: string }> => {
+    try {
+      if (!session?.user?.email) {
+        return { error: 'No email address found' };
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: session.user.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return {};
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      return { error: 'An unexpected error occurred' };
+    }
+  };
+
   const value = {
     user,
-    isAuthenticated: !!user,
+    session,
+    isAuthenticated: !!user && !!session,
+    isLoading,
     signIn,
     signUp,
-    signInWithGoogle,
     signOut,
     resetPassword,
     connectWallet,
     disconnectWallet,
-    isLoading,
+    resendVerificationEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      login_attempts: {
+        Row: {
+          attempted_at: string | null
+          email: string
+          id: string
+          ip_address: string | null
+          successful: boolean | null
+        }
+        Insert: {
+          attempted_at?: string | null
+          email: string
+          id?: string
+          ip_address?: string | null
+          successful?: boolean | null
+        }
+        Update: {
+          attempted_at?: string | null
+          email?: string
+          id?: string
+          ip_address?: string | null
+          successful?: boolean | null
+        }
+        Relationships: []
+      }
       model_purchases: {
         Row: {
           id: string
@@ -44,6 +68,36 @@ export type Database = {
           purchased_at?: string
           tx_hash?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          email_verified: boolean | null
+          id: string
+          name: string | null
+          updated_at: string | null
+          wallet_address: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          email_verified?: boolean | null
+          id: string
+          name?: string | null
+          updated_at?: string | null
+          wallet_address?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          email_verified?: boolean | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+          wallet_address?: string | null
         }
         Relationships: []
       }
