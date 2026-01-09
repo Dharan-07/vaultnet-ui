@@ -64,14 +64,10 @@ const ModelDetails = () => {
     const checkPurchaseStatus = async () => {
       if (!user?.id || !id) return;
       
-      const { data } = await supabase
-        .from('model_purchases')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('model_id', Number(id))
-        .maybeSingle();
+      const { data: hasPurchased } = await supabase
+        .rpc('has_purchased_model', { _model_id: Number(id) });
       
-      if (data) {
+      if (hasPurchased) {
         setHasModelAccess(true);
       }
     };
@@ -232,31 +228,18 @@ const ModelDetails = () => {
       if (result.success) {
         setHasModelAccess(true);
         
-        // Record purchase via server-side edge function for validation
+        // Record purchase via secure RPC function
         if (user?.id) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            const response = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/record-purchase`,
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${session.access_token}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  modelId: model.id,
-                  modelCid: model.cid,
-                  modelName: model.name,
-                  modelPrice: model.price,
-                  txHash: result.txHash || null,
-                }),
-              }
-            );
-
-            if (!response.ok) {
-              logger.error('Failed to record purchase:', await response.text());
-            }
+          const { error: rpcError } = await supabase.rpc('record_model_purchase', {
+            _model_id: model.id,
+            _model_cid: model.cid,
+            _model_name: model.name,
+            _model_price: model.price,
+            _tx_hash: result.txHash || null,
+          });
+          
+          if (rpcError) {
+            logger.error('Failed to record purchase:', rpcError);
           }
         }
         
