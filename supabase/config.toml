@@ -2,3 +2,9 @@ project_id = "gakxasjrvixvauulqenf"
 
 [functions.kaggle-datasets]
 verify_jwt = false
+
+[functions.pinata-upload]
+verify_jwt = false
+
+[functions.verify-purchase]
+verify_jwt = false

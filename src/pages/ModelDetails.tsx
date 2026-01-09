@@ -225,22 +225,43 @@ const ModelDetails = () => {
     
     try {
       const result = await buyModelAccess(model.id);
-      if (result.success) {
-        setHasModelAccess(true);
-        
-        // Record purchase via secure RPC function
-        if (user?.id) {
-          const { error: rpcError } = await supabase.rpc('record_model_purchase', {
-            _model_id: model.id,
-            _model_cid: model.cid,
-            _model_name: model.name,
-            _model_price: model.price,
-            _tx_hash: result.txHash || null,
-          });
+      if (result.success && result.txHash) {
+        // Verify transaction and record purchase via secure edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-purchase`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                txHash: result.txHash,
+                modelId: model.id,
+                modelCid: model.cid,
+                modelName: model.name,
+                modelPrice: model.price,
+              }),
+            }
+          );
+
+          const verifyResult = await response.json();
           
-          if (rpcError) {
-            logger.error('Failed to record purchase:', rpcError);
+          if (!response.ok) {
+            logger.error('Failed to verify purchase:', verifyResult.error);
+            toast({
+              title: 'Verification Failed',
+              description: verifyResult.error || 'Failed to verify blockchain transaction',
+              variant: 'destructive',
+            });
+            return;
           }
+          
+          setHasModelAccess(true);
+        } else {
+          logger.error('No session found for purchase verification');
         }
         
         toast({
