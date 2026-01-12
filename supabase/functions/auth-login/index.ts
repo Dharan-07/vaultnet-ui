@@ -1,207 +1,106 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Rate limiting configuration
-const MAX_ATTEMPTS_PER_EMAIL = 5; // Max attempts per email in window
-const MAX_ATTEMPTS_PER_IP = 10; // Max attempts per IP in window
-const RATE_LIMIT_WINDOW_MINUTES = 15; // Time window in minutes
-const LOCKOUT_DURATION_MINUTES = 30; // Lockout duration after too many failures
+const RATE_LIMIT_WINDOW_MINUTES = 15;
+const MAX_FAILED_ATTEMPTS_PER_EMAIL = 5;
+const MAX_FAILED_ATTEMPTS_PER_IP = 10;
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Service client for rate limiting (bypasses RLS)
-    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { email, action, successful } = await req.json();
+    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0] || 
+                     req.headers.get("cf-connecting-ip") || 
+                     "unknown";
 
-    // Get client IP
-    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    // Check rate limit action
+    if (action === "check-rate-limit") {
+      const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString();
 
-    // Parse request body
-    const { email, password, action } = await req.json();
+      // Check failed attempts by email
+      const { count: emailFailedCount } = await supabase
+        .from("login_attempts")
+        .select("*", { count: "exact", head: true })
+        .eq("email", email.toLowerCase())
+        .eq("successful", false)
+        .gte("attempted_at", windowStart);
 
-    if (!email || !password) {
-      return new Response(
-        JSON.stringify({ error: 'Email and password are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      // Check failed attempts by IP
+      const { count: ipFailedCount } = await supabase
+        .from("login_attempts")
+        .select("*", { count: "exact", head: true })
+        .eq("ip_address", clientIP)
+        .eq("successful", false)
+        .gte("attempted_at", windowStart);
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid email format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      const emailAttempts = emailFailedCount || 0;
+      const ipAttempts = ipFailedCount || 0;
 
-    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString();
-
-    // Check rate limit by email
-    const { data: emailAttempts, error: emailError } = await serviceClient
-      .from('login_attempts')
-      .select('id, successful')
-      .eq('email', email.toLowerCase())
-      .gte('attempted_at', windowStart)
-      .order('attempted_at', { ascending: false });
-
-    if (emailError) {
-      console.error('Error checking email rate limit:', emailError);
-    }
-
-    const failedEmailAttempts = (emailAttempts || []).filter(a => !a.successful).length;
-
-    if (failedEmailAttempts >= MAX_ATTEMPTS_PER_EMAIL) {
-      console.log(`Rate limit exceeded for email: ${email}`);
-      
-      // Record the blocked attempt
-      await serviceClient.from('login_attempts').insert({
-        email: email.toLowerCase(),
-        ip_address: clientIP,
-        successful: false,
-      });
-
-      return new Response(
-        JSON.stringify({ 
-          error: `Too many failed login attempts. Please try again in ${LOCKOUT_DURATION_MINUTES} minutes.`,
-          locked: true,
-          lockoutMinutes: LOCKOUT_DURATION_MINUTES
-        }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check rate limit by IP
-    const { data: ipAttempts, error: ipError } = await serviceClient
-      .from('login_attempts')
-      .select('id, successful')
-      .eq('ip_address', clientIP)
-      .gte('attempted_at', windowStart)
-      .order('attempted_at', { ascending: false });
-
-    if (ipError) {
-      console.error('Error checking IP rate limit:', ipError);
-    }
-
-    const failedIpAttempts = (ipAttempts || []).filter(a => !a.successful).length;
-
-    if (failedIpAttempts >= MAX_ATTEMPTS_PER_IP) {
-      console.log(`Rate limit exceeded for IP: ${clientIP}`);
-      
-      return new Response(
-        JSON.stringify({ 
-          error: 'Too many login attempts from this location. Please try again later.',
-          locked: true,
-          lockoutMinutes: LOCKOUT_DURATION_MINUTES
-        }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create anon client for actual auth
-    const anonClient = createClient(supabaseUrl, supabaseAnonKey);
-
-    let result;
-    
-    if (action === 'signup') {
-      // Sign up
-      result = await anonClient.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${req.headers.get('origin') || supabaseUrl}/`,
-          data: {
-            name: '',
-          }
-        }
-      });
-    } else {
-      // Sign in
-      result = await anonClient.auth.signInWithPassword({
-        email,
-        password,
-      });
-    }
-
-    // Record the attempt
-    await serviceClient.from('login_attempts').insert({
-      email: email.toLowerCase(),
-      ip_address: clientIP,
-      successful: !result.error,
-    });
-
-    if (result.error) {
-      console.log(`Login failed for ${email}: ${result.error.message}`);
-      
-      // Calculate remaining attempts
-      const remainingAttempts = MAX_ATTEMPTS_PER_EMAIL - failedEmailAttempts - 1;
-      
-      let errorMessage = result.error.message;
-      if (result.error.message.includes('Invalid login credentials')) {
-        errorMessage = 'Invalid email or password';
+      if (emailAttempts >= MAX_FAILED_ATTEMPTS_PER_EMAIL) {
+        return new Response(
+          JSON.stringify({
+            error: `Too many failed attempts. Please try again in ${RATE_LIMIT_WINDOW_MINUTES} minutes.`,
+            remainingAttempts: 0,
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
-      
-      return new Response(
-        JSON.stringify({ 
-          error: errorMessage,
-          remainingAttempts: Math.max(0, remainingAttempts),
-        }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
-    console.log(`Login successful for ${email}`);
+      if (ipAttempts >= MAX_FAILED_ATTEMPTS_PER_IP) {
+        return new Response(
+          JSON.stringify({
+            error: `Too many failed attempts from this location. Please try again later.`,
+            remainingAttempts: 0,
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
-    // Check if email verification is required
-    const user = result.data.user;
-    const session = result.data.session;
-    
-    // For signup, inform about email verification
-    if (action === 'signup' && user && !user.email_confirmed_at) {
       return new Response(
         JSON.stringify({
-          success: true,
-          requiresEmailVerification: true,
-          message: 'Please check your email to verify your account.',
-          user: {
-            id: user.id,
-            email: user.email,
-          }
+          allowed: true,
+          remainingAttempts: MAX_FAILED_ATTEMPTS_PER_EMAIL - emailAttempts,
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Record login attempt action
+    if (action === "record-attempt") {
+      await supabase.from("login_attempts").insert({
+        email: email.toLowerCase(),
+        ip_address: clientIP,
+        successful: successful ?? false,
+        attempted_at: new Date().toISOString(),
+      });
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        session,
-        user: user ? {
-          id: user.id,
-          email: user.email,
-          email_confirmed_at: user.email_confirmed_at,
-        } : null
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: "Invalid action" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
   } catch (error) {
-    console.error('Auth error:', error);
+    console.error("Auth login error:", error);
     return new Response(
-      JSON.stringify({ error: 'Authentication service error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

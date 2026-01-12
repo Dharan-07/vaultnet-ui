@@ -1,7 +1,17 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { auth, db } from '@/lib/firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 
 // Validation schemas
 export const emailSchema = z.string().email('Invalid email address').max(255, 'Email too long');
@@ -26,7 +36,6 @@ interface UserProfile {
 
 interface AuthContextType {
   user: UserProfile | null;
-  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string; remainingAttempts?: number }>;
@@ -50,75 +59,101 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user profile from profiles table
-  const fetchProfile = async (userId: string, userEmail: string, emailConfirmed: boolean) => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (profile) {
+  // Fetch user profile from Firestore
+  const fetchProfile = async (fbUser: FirebaseUser) => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
+      
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setUser({
+          id: fbUser.uid,
+          email: fbUser.email || '',
+          name: data.name || '',
+          walletAddress: data.walletAddress || undefined,
+          emailVerified: fbUser.emailVerified,
+        });
+      } else {
+        setUser({
+          id: fbUser.uid,
+          email: fbUser.email || '',
+          name: '',
+          emailVerified: fbUser.emailVerified,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
       setUser({
-        id: userId,
-        email: userEmail,
-        name: profile.name || '',
-        walletAddress: profile.wallet_address || undefined,
-        emailVerified: emailConfirmed,
-      });
-    } else {
-      setUser({
-        id: userId,
-        email: userEmail,
+        id: fbUser.uid,
+        email: fbUser.email || '',
         name: '',
-        emailVerified: emailConfirmed,
+        emailVerified: fbUser.emailVerified,
       });
     }
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        setSession(currentSession);
-        
-        if (currentSession?.user) {
-          // Defer profile fetch to avoid deadlock
-          setTimeout(() => {
-            fetchProfile(
-              currentSession.user.id,
-              currentSession.user.email || '',
-              !!currentSession.user.email_confirmed_at
-            );
-          }, 0);
-        } else {
-          setUser(null);
-        }
-        
-        setIsLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setFirebaseUser(fbUser);
       
-      if (existingSession?.user) {
-        fetchProfile(
-          existingSession.user.id,
-          existingSession.user.email || '',
-          !!existingSession.user.email_confirmed_at
-        );
+      if (fbUser) {
+        await fetchProfile(fbUser);
+      } else {
+        setUser(null);
       }
       
       setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
+
+  const checkRateLimit = async (email: string): Promise<{ allowed: boolean; remainingAttempts?: number; error?: string }> => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, action: 'check-rate-limit' }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { 
+          allowed: false, 
+          error: result.error || 'Rate limit check failed',
+          remainingAttempts: result.remainingAttempts 
+        };
+      }
+
+      return { allowed: true, remainingAttempts: result.remainingAttempts };
+    } catch (error) {
+      console.error('Rate limit check error:', error);
+      // Allow login if rate limit check fails
+      return { allowed: true };
+    }
+  };
+
+  const recordLoginAttempt = async (email: string, successful: boolean) => {
+    try {
+      await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, action: 'record-attempt', successful }),
+        }
+      );
+    } catch (error) {
+      console.error('Failed to record login attempt:', error);
+    }
+  };
 
   const signIn = async (email: string, password: string): Promise<{ error?: string; remainingAttempts?: number }> => {
     try {
@@ -128,37 +163,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: emailResult.error.errors[0].message };
       }
 
-      // Call rate-limited auth edge function
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-login`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, action: 'signin' }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
+      // Check rate limit
+      const rateLimitCheck = await checkRateLimit(email);
+      if (!rateLimitCheck.allowed) {
         return { 
-          error: result.error || 'Sign in failed', 
-          remainingAttempts: result.remainingAttempts 
+          error: rateLimitCheck.error || 'Too many login attempts. Please try again later.',
+          remainingAttempts: rateLimitCheck.remainingAttempts 
         };
       }
 
-      // Set the session from the response
-      if (result.session) {
-        await supabase.auth.setSession({
-          access_token: result.session.access_token,
-          refresh_token: result.session.refresh_token,
-        });
-      }
+      // Sign in with Firebase
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      // Record successful attempt
+      await recordLoginAttempt(email, true);
 
       return {};
-    } catch (error) {
-      console.error('Sign in error:', error);
-      return { error: 'An unexpected error occurred' };
+    } catch (error: any) {
+      // Record failed attempt
+      await recordLoginAttempt(email, false);
+      
+      let errorMessage = 'An unexpected error occurred';
+      
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later.';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled';
+      }
+      
+      return { error: errorMessage };
     }
   };
 
@@ -180,53 +215,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: passwordResult.error.errors[0].message };
       }
 
-      // Call rate-limited auth edge function
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-login`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, action: 'signup' }),
-        }
-      );
+      // Create user with Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Send email verification
+      await sendEmailVerification(userCredential.user);
 
-      const result = await response.json();
+      // Create user profile in Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        name,
+        email,
+        emailVerified: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
-      if (!response.ok) {
-        return { error: result.error || 'Sign up failed' };
+      return { requiresEmailVerification: true };
+    } catch (error: any) {
+      let errorMessage = 'An unexpected error occurred';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'An account with this email already exists';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak';
       }
-
-      // Update profile with name
-      if (result.user?.id) {
-        await supabase
-          .from('profiles')
-          .update({ name })
-          .eq('id', result.user.id);
-      }
-
-      if (result.requiresEmailVerification) {
-        return { requiresEmailVerification: true };
-      }
-
-      // Set the session if available (auto-confirm enabled)
-      if (result.session) {
-        await supabase.auth.setSession({
-          access_token: result.session.access_token,
-          refresh_token: result.session.refresh_token,
-        });
-      }
-
-      return {};
-    } catch (error) {
-      console.error('Sign up error:', error);
-      return { error: 'An unexpected error occurred' };
+      
+      return { error: errorMessage };
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await firebaseSignOut(auth);
     setUser(null);
-    setSession(null);
+    setFirebaseUser(null);
   };
 
   const resetPassword = async (email: string): Promise<{ error?: string }> => {
@@ -236,76 +259,61 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: emailResult.error.errors[0].message };
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/signin`,
-      });
-
-      if (error) {
-        return { error: error.message };
-      }
-
+      await sendPasswordResetEmail(auth, email);
       return {};
-    } catch (error) {
-      console.error('Reset password error:', error);
-      return { error: 'An unexpected error occurred' };
+    } catch (error: any) {
+      let errorMessage = 'An unexpected error occurred';
+      
+      if (error.code === 'auth/user-not-found') {
+        // Don't reveal if user exists
+        return {};
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address';
+      }
+      
+      return { error: errorMessage };
     }
   };
 
   const connectWallet = async (walletAddress: string) => {
-    if (!user) throw new Error('Must be logged in to connect wallet');
+    if (!user || !firebaseUser) throw new Error('Must be logged in to connect wallet');
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ wallet_address: walletAddress })
-      .eq('id', user.id);
-
-    if (error) throw error;
+    await updateDoc(doc(db, 'users', firebaseUser.uid), {
+      walletAddress,
+      updatedAt: new Date().toISOString(),
+    });
 
     setUser({ ...user, walletAddress });
   };
 
   const disconnectWallet = async () => {
-    if (!user) throw new Error('Must be logged in to disconnect wallet');
+    if (!user || !firebaseUser) throw new Error('Must be logged in to disconnect wallet');
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ wallet_address: null })
-      .eq('id', user.id);
-
-    if (error) throw error;
+    await updateDoc(doc(db, 'users', firebaseUser.uid), {
+      walletAddress: null,
+      updatedAt: new Date().toISOString(),
+    });
 
     setUser({ ...user, walletAddress: undefined });
   };
 
   const resendVerificationEmail = async (): Promise<{ error?: string }> => {
     try {
-      if (!session?.user?.email) {
-        return { error: 'No email address found' };
+      if (!firebaseUser) {
+        return { error: 'No user logged in' };
       }
 
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: session.user.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) {
-        return { error: error.message };
-      }
-
+      await sendEmailVerification(firebaseUser);
       return {};
-    } catch (error) {
+    } catch (error: any) {
       console.error('Resend verification error:', error);
-      return { error: 'An unexpected error occurred' };
+      return { error: 'Failed to send verification email. Please try again later.' };
     }
   };
 
   const value = {
     user,
-    session,
-    isAuthenticated: !!user && !!session,
+    isAuthenticated: !!user,
     isLoading,
     signIn,
     signUp,
