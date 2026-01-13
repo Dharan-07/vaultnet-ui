@@ -222,13 +222,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await sendEmailVerification(userCredential.user);
 
       // Create user profile in Firestore
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        name,
-        email,
-        emailVerified: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      try {
+        const userRef = doc(db, 'users', userCredential.user.uid);
+        const userData = {
+          name,
+          email,
+          emailVerified: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        console.log('Saving user data to Firestore:', userCredential.user.uid, userData);
+        await setDoc(userRef, userData);
+        console.log('User data saved successfully to Firestore');
+      } catch (firestoreError) {
+        console.error('Failed to save user data to Firestore:', firestoreError);
+        // Still return success since the user was created in Firebase Auth
+      }
 
       return { requiresEmailVerification: true };
     } catch (error: any) {
