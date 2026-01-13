@@ -65,8 +65,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Fetch user profile from Firestore
   const fetchProfile = async (fbUser: FirebaseUser) => {
     try {
-      const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
-      
+      const userRef = doc(db, 'users', fbUser.uid);
+      const userDoc = await getDoc(userRef);
+
       if (userDoc.exists()) {
         const data = userDoc.data();
         setUser({
@@ -76,14 +77,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           walletAddress: data.walletAddress || undefined,
           emailVerified: fbUser.emailVerified,
         });
-      } else {
-        setUser({
-          id: fbUser.uid,
-          email: fbUser.email || '',
-          name: '',
-          emailVerified: fbUser.emailVerified,
-        });
+        return;
       }
+
+      // Self-heal: if the profile doc wasn't created during signup, create it on first login.
+      const fallbackData = {
+        name: fbUser.displayName || '',
+        email: fbUser.email || '',
+        emailVerified: fbUser.emailVerified,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      console.warn('No Firestore profile found; attempting to create one:', fbUser.uid, fallbackData);
+
+      try {
+        // Ensure the auth token is ready for Firestore rules (request.auth)
+        await fbUser.getIdToken(true);
+        await setDoc(userRef, fallbackData, { merge: true });
+        console.log('Firestore profile created successfully');
+      } catch (createError) {
+        console.error('Failed to create Firestore profile:', createError);
+      }
+
+      setUser({
+        id: fbUser.uid,
+        email: fbUser.email || '',
+        name: fallbackData.name || '',
+        emailVerified: fbUser.emailVerified,
+      });
     } catch (error) {
       console.error('Error fetching profile:', error);
       setUser({
