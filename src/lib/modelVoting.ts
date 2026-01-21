@@ -5,6 +5,7 @@ import {
   getDoc, 
   setDoc, 
   updateDoc, 
+  addDoc,
   increment,
   query,
   where,
@@ -25,7 +26,9 @@ export interface UserVote {
   votedAt: Date;
 }
 
-// Get votes for a model
+// ─────────────────────────────────────────────────────────────────────────────
+// Get votes for a model — reads from model_votes/{modelId} (top-level, shared)
+// ─────────────────────────────────────────────────────────────────────────────
 export const getModelVotes = async (modelId: number): Promise<ModelVote> => {
   try {
     const voteRef = doc(db, 'model_votes', modelId.toString());
@@ -48,14 +51,27 @@ export const getModelVotes = async (modelId: number): Promise<ModelVote> => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get user's vote for a model
+// NEW: users/{userId}/votes/{modelId}
+// OLD (fallback): user_votes/{userId}_{modelId}
+// ─────────────────────────────────────────────────────────────────────────────
 export const getUserVote = async (userId: string, modelId: number): Promise<'up' | 'down' | null> => {
   try {
-    const userVoteRef = doc(db, 'user_votes', `${userId}_${modelId}`);
-    const userVoteDoc = await getDoc(userVoteRef);
+    // Try new subcollection first
+    const newVoteRef = doc(db, 'users', userId, 'votes', modelId.toString());
+    const newVoteDoc = await getDoc(newVoteRef);
     
-    if (userVoteDoc.exists()) {
-      return userVoteDoc.data().voteType as 'up' | 'down';
+    if (newVoteDoc.exists() && !newVoteDoc.data().deleted) {
+      return newVoteDoc.data().voteType as 'up' | 'down';
+    }
+
+    // Fallback to old collection
+    const oldVoteRef = doc(db, 'user_votes', `${userId}_${modelId}`);
+    const oldVoteDoc = await getDoc(oldVoteRef);
+    
+    if (oldVoteDoc.exists() && !oldVoteDoc.data().deleted) {
+      return oldVoteDoc.data().voteType as 'up' | 'down';
     }
     
     return null;
@@ -77,7 +93,12 @@ export const DOWNVOTE_REASONS = [
 
 export type DownvoteReason = typeof DOWNVOTE_REASONS[number]['id'];
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Vote on a model
+// Writes to:
+//   - model_votes/{modelId} (shared aggregate)
+//   - users/{userId}/votes/{modelId} (user-specific, NEW structure)
+// ─────────────────────────────────────────────────────────────────────────────
 export const voteOnModel = async (
   userId: string,
   userEmail: string,
@@ -86,18 +107,28 @@ export const voteOnModel = async (
   downvoteReason?: DownvoteReason
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const userVoteRef = doc(db, 'user_votes', `${userId}_${modelId}`);
+    // NEW user vote path
+    const userVoteRef = doc(db, 'users', userId, 'votes', modelId.toString());
     const modelVoteRef = doc(db, 'model_votes', modelId.toString());
     
-    // Check existing vote
-    const existingVoteDoc = await getDoc(userVoteRef);
-    const existingVote = existingVoteDoc.exists() ? existingVoteDoc.data().voteType : null;
+    // Check existing vote (new path first, then old fallback)
+    let existingVote: string | null = null;
+    const newVoteDoc = await getDoc(userVoteRef);
+    if (newVoteDoc.exists() && !newVoteDoc.data().deleted) {
+      existingVote = newVoteDoc.data().voteType;
+    } else {
+      // Fallback read from old path
+      const oldVoteRef = doc(db, 'user_votes', `${userId}_${modelId}`);
+      const oldVoteDoc = await getDoc(oldVoteRef);
+      if (oldVoteDoc.exists() && !oldVoteDoc.data().deleted) {
+        existingVote = oldVoteDoc.data().voteType;
+      }
+    }
     
     // Get or create model vote document
     const modelVoteDoc = await getDoc(modelVoteRef);
     
     if (!modelVoteDoc.exists()) {
-      // Create initial vote document
       await setDoc(modelVoteRef, {
         modelId,
         upvotes: 0,
@@ -137,7 +168,7 @@ export const voteOnModel = async (
       });
     }
     
-    // Save user vote
+    // Save user vote to NEW subcollection
     await setDoc(userVoteRef, {
       userId,
       userEmail,
@@ -154,7 +185,9 @@ export const voteOnModel = async (
   }
 };
 
-// Store trust score in Firebase
+// ─────────────────────────────────────────────────────────────────────────────
+// Store trust score in Firebase (model_votes/{modelId}/trust_scores singleton)
+// ─────────────────────────────────────────────────────────────────────────────
 export const storeTrustScore = async (
   modelId: number,
   trustScore: number,
@@ -176,7 +209,9 @@ export const storeTrustScore = async (
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get trust score from Firebase
+// ─────────────────────────────────────────────────────────────────────────────
 export const getTrustScore = async (modelId: number): Promise<{
   trustScore: number;
   hash: string;
