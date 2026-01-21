@@ -9,7 +9,7 @@ import {
   sendPasswordResetEmail,
   User as FirebaseUser
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user profile from Firestore
+  // Fetch user profile from Firestore (new structure: users/{uid})
   const fetchProfile = async (fbUser: FirebaseUser) => {
     try {
       const userRef = doc(db, 'users', fbUser.uid);
@@ -85,14 +85,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name: fbUser.displayName || '',
         email: fbUser.email || '',
         emailVerified: fbUser.emailVerified,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       console.warn('No Firestore profile found; attempting to create one:', fbUser.uid, fallbackData);
 
       try {
-        // Ensure the auth token is ready for Firestore rules (request.auth)
         await fbUser.getIdToken(true);
         await setDoc(userRef, fallbackData, { merge: true });
         console.log('Firestore profile created successfully');
@@ -103,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser({
         id: fbUser.uid,
         email: fbUser.email || '',
-        name: fallbackData.name || '',
+        name: (fallbackData.name as string) || '',
         emailVerified: fbUser.emailVerified,
       });
     } catch (error) {
@@ -114,6 +113,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name: '',
         emailVerified: fbUser.emailVerified,
       });
+    }
+  };
+
+  // Record login to subcollection users/{uid}/logins
+  const recordLogin = async (uid: string, email: string) => {
+    try {
+      const loginsRef = collection(db, 'users', uid, 'logins');
+      await addDoc(loginsRef, {
+        email,
+        loginAt: serverTimestamp(),
+      });
+      console.log('Login recorded to users/{uid}/logins');
+    } catch (error) {
+      console.error('Failed to record login:', error);
     }
   };
 
@@ -157,7 +170,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { allowed: true, remainingAttempts: result.remainingAttempts };
     } catch (error) {
       console.error('Rate limit check error:', error);
-      // Allow login if rate limit check fails
       return { allowed: true };
     }
   };
@@ -179,13 +191,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string): Promise<{ error?: string; remainingAttempts?: number }> => {
     try {
-      // Validate input
       const emailResult = emailSchema.safeParse(email);
       if (!emailResult.success) {
         return { error: emailResult.error.errors[0].message };
       }
 
-      // Check rate limit
       const rateLimitCheck = await checkRateLimit(email);
       if (!rateLimitCheck.allowed) {
         return { 
@@ -194,15 +204,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      // Sign in with Firebase
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // Record successful attempt
+      // Record successful attempt (edge function)
       await recordLoginAttempt(email, true);
+
+      // Record login to Firestore subcollection
+      await recordLogin(userCredential.user.uid, email);
+
+      // Update lastLogin on user doc
+      try {
+        const userRef = doc(db, 'users', userCredential.user.uid);
+        await updateDoc(userRef, { lastLogin: serverTimestamp(), updatedAt: serverTimestamp() });
+      } catch (err) {
+        console.error('Failed to update lastLogin:', err);
+      }
 
       return {};
     } catch (error: any) {
-      // Record failed attempt
       await recordLoginAttempt(email, false);
       
       let errorMessage = 'An unexpected error occurred';
@@ -221,7 +240,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (name: string, email: string, password: string): Promise<{ error?: string; requiresEmailVerification?: boolean }> => {
     try {
-      // Validate inputs
       const nameResult = nameSchema.safeParse(name);
       if (!nameResult.success) {
         return { error: nameResult.error.errors[0].message };
@@ -237,28 +255,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: passwordResult.error.errors[0].message };
       }
 
-      // Create user with Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Send email verification
       await sendEmailVerification(userCredential.user);
 
-      // Create user profile in Firestore
+      // Create user profile in Firestore (users/{uid})
       try {
         const userRef = doc(db, 'users', userCredential.user.uid);
         const userData = {
           name,
           email,
           emailVerified: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         };
-        console.log('Saving user data to Firestore:', userCredential.user.uid, userData);
+        console.log('Saving user data to Firestore (users/{uid}):', userCredential.user.uid, userData);
         await setDoc(userRef, userData);
         console.log('User data saved successfully to Firestore');
       } catch (firestoreError) {
         console.error('Failed to save user data to Firestore:', firestoreError);
-        // Still return success since the user was created in Firebase Auth
       }
 
       return { requiresEmailVerification: true };
@@ -296,7 +311,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let errorMessage = 'An unexpected error occurred';
       
       if (error.code === 'auth/user-not-found') {
-        // Don't reveal if user exists
         return {};
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Invalid email address';
@@ -306,13 +320,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Connect wallet — saves to users/{uid} and adds entry in users/{uid}/wallets subcollection
   const connectWallet = async (walletAddress: string) => {
     if (!user || !firebaseUser) throw new Error('Must be logged in to connect wallet');
 
-    await updateDoc(doc(db, 'users', firebaseUser.uid), {
+    const userRef = doc(db, 'users', firebaseUser.uid);
+    await updateDoc(userRef, {
       walletAddress,
-      updatedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
     });
+
+    // Also record in subcollection for audit trail
+    try {
+      const walletsRef = collection(db, 'users', firebaseUser.uid, 'wallets');
+      await addDoc(walletsRef, {
+        walletAddress,
+        connectedAt: serverTimestamp(),
+      });
+      console.log('Wallet recorded to users/{uid}/wallets');
+    } catch (err) {
+      console.error('Failed to record wallet to subcollection:', err);
+    }
 
     setUser({ ...user, walletAddress });
   };
@@ -322,7 +350,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     await updateDoc(doc(db, 'users', firebaseUser.uid), {
       walletAddress: null,
-      updatedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
     });
 
     setUser({ ...user, walletAddress: undefined });
