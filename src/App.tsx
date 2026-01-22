@@ -17,7 +17,6 @@ import Datasets from "./pages/Datasets";
 import UploadDataset from "./pages/UploadDataset";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-import FirestoreTest from "./pages/FirestoreTest";
 
 const queryClient = new QueryClient();
 
@@ -40,7 +39,6 @@ const App = () => (
             <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/firestore-test" element={<ProtectedRoute><FirestoreTest /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
