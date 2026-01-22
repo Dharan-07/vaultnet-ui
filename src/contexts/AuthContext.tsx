@@ -116,15 +116,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Record login to subcollection users/{uid}/logins
+  // Record login to top-level login collection
   const recordLogin = async (uid: string, email: string) => {
     try {
-      const loginsRef = collection(db, 'users', uid, 'logins');
+      const loginsRef = collection(db, 'login');
       await addDoc(loginsRef, {
+        userId: uid,
         email,
         loginAt: serverTimestamp(),
       });
-      console.log('Login recorded to users/{uid}/logins');
+      console.log('Login recorded to login collection');
     } catch (error) {
       console.error('Failed to record login:', error);
     }
@@ -320,7 +321,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Connect wallet — saves to users/{uid} and adds entry in users/{uid}/wallets subcollection
+  // Connect wallet — saves to users/{uid} and adds entry to top-level wallets collection
   const connectWallet = async (walletAddress: string) => {
     if (!user || !firebaseUser) throw new Error('Must be logged in to connect wallet');
 
@@ -330,16 +331,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       updatedAt: serverTimestamp(),
     });
 
-    // Also record in subcollection for audit trail
+    // Also record in top-level wallets collection for audit trail
     try {
-      const walletsRef = collection(db, 'users', firebaseUser.uid, 'wallets');
+      const walletsRef = collection(db, 'wallets');
       await addDoc(walletsRef, {
+        userId: firebaseUser.uid,
         walletAddress,
         connectedAt: serverTimestamp(),
       });
-      console.log('Wallet recorded to users/{uid}/wallets');
+      console.log('Wallet recorded to wallets collection');
     } catch (err) {
-      console.error('Failed to record wallet to subcollection:', err);
+      console.error('Failed to record wallet to collection:', err);
     }
 
     setUser({ ...user, walletAddress });
