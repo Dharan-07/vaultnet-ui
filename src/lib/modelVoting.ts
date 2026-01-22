@@ -53,25 +53,15 @@ export const getModelVotes = async (modelId: number): Promise<ModelVote> => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Get user's vote for a model
-// NEW: users/{userId}/votes/{modelId}
-// OLD (fallback): user_votes/{userId}_{modelId}
+// Reads from top-level user_votes collection: user_votes/{odId}
 // ─────────────────────────────────────────────────────────────────────────────
 export const getUserVote = async (userId: string, modelId: number): Promise<'up' | 'down' | null> => {
   try {
-    // Try new subcollection first
-    const newVoteRef = doc(db, 'users', userId, 'votes', modelId.toString());
-    const newVoteDoc = await getDoc(newVoteRef);
+    const voteRef = doc(db, 'user_votes', `${userId}_${modelId}`);
+    const voteDoc = await getDoc(voteRef);
     
-    if (newVoteDoc.exists() && !newVoteDoc.data().deleted) {
-      return newVoteDoc.data().voteType as 'up' | 'down';
-    }
-
-    // Fallback to old collection
-    const oldVoteRef = doc(db, 'user_votes', `${userId}_${modelId}`);
-    const oldVoteDoc = await getDoc(oldVoteRef);
-    
-    if (oldVoteDoc.exists() && !oldVoteDoc.data().deleted) {
-      return oldVoteDoc.data().voteType as 'up' | 'down';
+    if (voteDoc.exists() && !voteDoc.data().deleted) {
+      return voteDoc.data().voteType as 'up' | 'down';
     }
     
     return null;
@@ -97,7 +87,7 @@ export type DownvoteReason = typeof DOWNVOTE_REASONS[number]['id'];
 // Vote on a model
 // Writes to:
 //   - model_votes/{modelId} (shared aggregate)
-//   - users/{userId}/votes/{modelId} (user-specific, NEW structure)
+//   - user_votes/{userId}_{modelId} (top-level user-specific votes)
 // ─────────────────────────────────────────────────────────────────────────────
 export const voteOnModel = async (
   userId: string,
@@ -107,22 +97,14 @@ export const voteOnModel = async (
   downvoteReason?: DownvoteReason
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // NEW user vote path
-    const userVoteRef = doc(db, 'users', userId, 'votes', modelId.toString());
+    const userVoteRef = doc(db, 'user_votes', `${userId}_${modelId}`);
     const modelVoteRef = doc(db, 'model_votes', modelId.toString());
     
-    // Check existing vote (new path first, then old fallback)
+    // Check existing vote
     let existingVote: string | null = null;
-    const newVoteDoc = await getDoc(userVoteRef);
-    if (newVoteDoc.exists() && !newVoteDoc.data().deleted) {
-      existingVote = newVoteDoc.data().voteType;
-    } else {
-      // Fallback read from old path
-      const oldVoteRef = doc(db, 'user_votes', `${userId}_${modelId}`);
-      const oldVoteDoc = await getDoc(oldVoteRef);
-      if (oldVoteDoc.exists() && !oldVoteDoc.data().deleted) {
-        existingVote = oldVoteDoc.data().voteType;
-      }
+    const voteDoc = await getDoc(userVoteRef);
+    if (voteDoc.exists() && !voteDoc.data().deleted) {
+      existingVote = voteDoc.data().voteType;
     }
     
     // Get or create model vote document
@@ -168,7 +150,7 @@ export const voteOnModel = async (
       });
     }
     
-    // Save user vote to NEW subcollection
+    // Save user vote to top-level user_votes collection
     await setDoc(userVoteRef, {
       userId,
       userEmail,
