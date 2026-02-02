@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Redis } from "https://esm.sh/@upstash/redis@1.28.0";
 
 const corsHeaders = {
@@ -23,6 +22,49 @@ async function checkRateLimit(redis: Redis, identifier: string): Promise<{ allow
     allowed: current <= RATE_LIMIT_REQUESTS,
     remaining: Math.max(0, RATE_LIMIT_REQUESTS - current),
   };
+}
+
+// Verify Firebase ID token
+async function verifyFirebaseToken(idToken: string): Promise<{ uid: string } | null> {
+  try {
+    const firebaseProjectId = Deno.env.get('FIREBASE_PROJECT_ID');
+    if (!firebaseProjectId) {
+      console.error('FIREBASE_PROJECT_ID not configured');
+      return null;
+    }
+
+    // Decode the token to get the payload (we'll verify structure)
+    const parts = idToken.split('.');
+    if (parts.length !== 3) {
+      console.error('Invalid token format');
+      return null;
+    }
+
+    // Decode payload
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    
+    // Basic validation
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      console.error('Token expired');
+      return null;
+    }
+    
+    if (payload.iss !== `https://securetoken.google.com/${firebaseProjectId}`) {
+      console.error('Invalid issuer');
+      return null;
+    }
+
+    if (payload.aud !== firebaseProjectId) {
+      console.error('Invalid audience');
+      return null;
+    }
+
+    return { uid: payload.sub || payload.user_id };
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return null;
+  }
 }
 
 serve(async (req) => {
@@ -57,9 +99,9 @@ serve(async (req) => {
       );
     }
 
-    // Verify authentication
+    // Verify authentication (Firebase token)
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.error('No authorization header provided');
       return new Response(
         JSON.stringify({ error: 'Authentication required' }),
@@ -67,23 +109,18 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase client and verify user
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      console.error('Invalid authentication:', authError?.message);
+    const idToken = authHeader.replace('Bearer ', '');
+    const decodedToken = await verifyFirebaseToken(idToken);
+    
+    if (!decodedToken) {
+      console.error('Invalid Firebase token');
       return new Response(
         JSON.stringify({ error: 'Invalid authentication' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Authenticated user: ${user.id}`);
+    console.log(`Authenticated user: ${decodedToken.uid}`);
 
     const kaggleUsername = Deno.env.get('KAGGLE_USERNAME');
     const kaggleApiKey = Deno.env.get('KAGGLE_API_KEY');

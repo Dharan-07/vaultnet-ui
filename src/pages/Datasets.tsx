@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { auth } from '@/lib/firebase';
 
 interface KaggleDataset {
   ref: string;
@@ -35,6 +36,7 @@ const Datasets = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredDatasetId, setHoveredDatasetId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   
   useEffect(() => {
     setIsLoaded(true);
@@ -45,14 +47,16 @@ const Datasets = () => {
     setError(null);
     
     try {
-      // Get current session for authentication
-      const { data: { session } } = await supabase.auth.getSession();
+      // Get Firebase auth token
+      const currentUser = auth.currentUser;
       
-      if (!session) {
+      if (!currentUser) {
         setError('Please sign in to view datasets');
         setLoading(false);
         return;
       }
+
+      const idToken = await currentUser.getIdToken();
 
       // Build URL with params for GET request
       const params = new URLSearchParams({
@@ -67,7 +71,7 @@ const Datasets = () => {
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/kaggle-datasets?${params.toString()}`,
         {
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${idToken}`,
             'Content-Type': 'application/json',
           },
         }
