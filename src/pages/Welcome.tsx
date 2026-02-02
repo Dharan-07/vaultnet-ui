@@ -4,7 +4,7 @@ import { Database, Shield, Cpu, ArrowRight, ChevronDown, Users, Globe, Lock, Zap
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Spline from '@splinetool/react-spline';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
+import InstructionsSection from '@/components/InstructionsSection';
 interface GridNode {
   id: number;
   x: number;
@@ -402,16 +402,28 @@ const Welcome = () => {
                 </div>
               </div>
 
-              {/* Footer within scroll */}
-              <div className="text-center pt-8 pb-4">
-                <p className="text-sm text-foreground/40">
-                  © 2024 VaultNet. All rights reserved.
-                </p>
-              </div>
+              {/* Scroll to Instructions indicator */}
+              <button 
+                onClick={() => document.getElementById('instructions-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex flex-col items-center gap-2 cursor-pointer mx-auto mt-8 hover:scale-110 transition-transform"
+              >
+                <span className="text-sm text-foreground/50">View Instructions</span>
+                <ChevronDown className="w-6 h-6 text-primary animate-bounce" />
+              </button>
             </div>
           </ScrollArea>
         </div>
       </section>
+
+      {/* Instructions Section */}
+      <InstructionsSection />
+
+      {/* Footer */}
+      <footer className="relative z-10 py-8 text-center border-t border-border/30 bg-background/80 backdrop-blur-sm">
+        <p className="text-sm text-foreground/40">
+          © 2024 VaultNet. All rights reserved.
+        </p>
+      </footer>
     </div>
   );
 };
