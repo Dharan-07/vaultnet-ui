@@ -16,6 +16,7 @@ import { TrustScoreBadge } from '@/components/TrustScoreBadge';
 import { VotingButtons } from '@/components/VotingButtons';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { auth } from '@/lib/firebase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,15 +60,20 @@ const ModelDetails = () => {
   const [isUploader, setIsUploader] = useState(false);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
 
-  // Check if user has already purchased this model
+  // Check if user has already purchased this model using Firebase UID
   useEffect(() => {
     const checkPurchaseStatus = async () => {
       if (!user?.id || !id) return;
       
-      const { data: hasPurchased } = await supabase
-        .rpc('has_purchased_model', { _model_id: Number(id) });
+      // Query directly using Firebase UID stored in user_id column
+      const { data: purchases } = await supabase
+        .from('model_purchases')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('model_id', Number(id))
+        .maybeSingle();
       
-      if (hasPurchased) {
+      if (purchases) {
         setHasModelAccess(true);
       }
     };
@@ -226,15 +232,17 @@ const ModelDetails = () => {
     try {
       const result = await buyModelAccess(model.id);
       if (result.success && result.txHash) {
-        // Verify transaction and record purchase via secure edge function
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
+        // Get Firebase ID token for authentication
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          const idToken = await currentUser.getIdToken();
+          
           const response = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-purchase`,
             {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${session.access_token}`,
+                'Authorization': `Bearer ${idToken}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
@@ -261,7 +269,7 @@ const ModelDetails = () => {
           
           setHasModelAccess(true);
         } else {
-          logger.error('No session found for purchase verification');
+          logger.error('No Firebase user found for purchase verification');
         }
         
         toast({

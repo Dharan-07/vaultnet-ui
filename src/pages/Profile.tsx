@@ -44,7 +44,7 @@ const Profile = () => {
     setIsLoaded(true);
   }, []);
 
-  // Fetch purchased models
+  // Fetch purchased models using Firebase UID directly
   useEffect(() => {
     const fetchPurchases = async () => {
       if (!user?.id) {
@@ -53,8 +53,12 @@ const Profile = () => {
       }
       
       try {
+        // Query purchases directly using the Firebase UID stored in user_id
         const { data, error } = await supabase
-          .rpc('get_my_model_purchases');
+          .from('model_purchases')
+          .select('id, model_id, model_cid, model_name, model_price, purchased_at')
+          .eq('user_id', user.id)
+          .order('purchased_at', { ascending: false });
         
         if (error) throw error;
         setPurchasedModels(data || []);
