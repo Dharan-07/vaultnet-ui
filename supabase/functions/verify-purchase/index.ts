@@ -28,8 +28,45 @@ async function checkRateLimit(redis: Redis, identifier: string): Promise<{ allow
   };
 }
 
-// Minimal ABI for parsing buyModel events
-const PURCHASE_EVENT_SIGNATURE = '0x' + 'ModelPurchased(uint256,address)'.split('').reduce((acc, char) => acc + char.charCodeAt(0).toString(16), '');
+// Verify Firebase ID token
+async function verifyFirebaseToken(idToken: string): Promise<{ uid: string } | null> {
+  try {
+    const firebaseProjectId = Deno.env.get('FIREBASE_PROJECT_ID');
+    if (!firebaseProjectId) {
+      console.error('FIREBASE_PROJECT_ID not configured');
+      return null;
+    }
+
+    const parts = idToken.split('.');
+    if (parts.length !== 3) {
+      console.error('Invalid token format');
+      return null;
+    }
+
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      console.error('Token expired');
+      return null;
+    }
+    
+    if (payload.iss !== `https://securetoken.google.com/${firebaseProjectId}`) {
+      console.error('Invalid issuer');
+      return null;
+    }
+
+    if (payload.aud !== firebaseProjectId) {
+      console.error('Invalid audience');
+      return null;
+    }
+
+    return { uid: payload.sub || payload.user_id };
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return null;
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -61,30 +98,27 @@ serve(async (req) => {
       );
     }
 
-    // Verify authentication
+    // Verify Firebase authentication
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(
         JSON.stringify({ error: 'Authentication required' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
+    const idToken = authHeader.replace('Bearer ', '');
+    const decodedToken = await verifyFirebaseToken(idToken);
+    
+    if (!decodedToken) {
       return new Response(
         JSON.stringify({ error: 'Invalid authentication' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Authenticated user: ${user.id}`);
+    const userId = decodedToken.uid;
+    console.log(`Authenticated Firebase user: ${userId}`);
 
     // Parse request body
     const { txHash, modelId, modelCid, modelName, modelPrice } = await req.json();
@@ -268,7 +302,7 @@ serve(async (req) => {
     const { data: existingPurchase } = await serviceClient
       .from('model_purchases')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('model_id', modelId)
       .maybeSingle();
 
@@ -280,11 +314,11 @@ serve(async (req) => {
       );
     }
 
-    // Insert the verified purchase
+    // Insert the verified purchase with Firebase UID
     const { data: purchase, error: insertError } = await serviceClient
       .from('model_purchases')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         model_id: modelId,
         model_cid: modelCid,
         model_name: modelName,
