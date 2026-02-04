@@ -121,7 +121,7 @@ serve(async (req) => {
     console.log(`Authenticated Firebase user: ${userId}`);
 
     // Parse request body
-    const { txHash, modelId, modelCid, modelName, modelPrice } = await req.json();
+    const { txHash, modelId, modelCid, modelName, modelPrice, walletAddress } = await req.json();
 
     // Validate inputs
     if (!txHash || typeof txHash !== 'string') {
@@ -314,7 +314,7 @@ serve(async (req) => {
       );
     }
 
-    // Insert the verified purchase with Firebase UID
+    // Insert the verified purchase with Firebase UID and wallet address
     const { data: purchase, error: insertError } = await serviceClient
       .from('model_purchases')
       .insert({
@@ -324,6 +324,7 @@ serve(async (req) => {
         model_name: modelName,
         model_price: modelPrice,
         tx_hash: txHash,
+        wallet_address: walletAddress || null,
       })
       .select()
       .single();
