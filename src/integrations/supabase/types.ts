@@ -48,6 +48,7 @@ export type Database = {
           purchased_at: string
           tx_hash: string | null
           user_id: string
+          wallet_address: string | null
         }
         Insert: {
           id?: string
@@ -58,6 +59,7 @@ export type Database = {
           purchased_at?: string
           tx_hash?: string | null
           user_id: string
+          wallet_address?: string | null
         }
         Update: {
           id?: string
@@ -68,6 +70,7 @@ export type Database = {
           purchased_at?: string
           tx_hash?: string | null
           user_id?: string
+          wallet_address?: string | null
         }
         Relationships: []
       }
