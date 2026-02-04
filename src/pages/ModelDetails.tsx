@@ -14,7 +14,6 @@ import { buyModelAccess, getWalletAddress, getModel, ModelData } from '@/lib/web
 import { downloadFromIPFS, getIPFSUrl, fetchMetadataFromIPFS } from '@/lib/ipfs';
 import { TrustScoreBadge } from '@/components/TrustScoreBadge';
 import { VotingButtons } from '@/components/VotingButtons';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { auth } from '@/lib/firebase';
 import {
@@ -60,21 +59,41 @@ const ModelDetails = () => {
   const [isUploader, setIsUploader] = useState(false);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
 
-  // Check if user has already purchased this model using Firebase UID
+  // Check if user has already purchased this model using edge function
   useEffect(() => {
     const checkPurchaseStatus = async () => {
       if (!user?.id || !id) return;
       
-      // Query directly using Firebase UID stored in user_id column
-      const { data: purchases } = await supabase
-        .from('model_purchases')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('model_id', Number(id))
-        .maybeSingle();
-      
-      if (purchases) {
-        setHasModelAccess(true);
+      try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        
+        const idToken = await currentUser.getIdToken();
+        const walletAddress = getWalletAddress();
+        
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-purchases`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${idToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              modelId: Number(id),
+              walletAddress: walletAddress || undefined,
+            }),
+          }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.purchases && data.purchases.length > 0) {
+            setHasModelAccess(true);
+          }
+        }
+      } catch (error) {
+        logger.error('Error checking purchase status:', error);
       }
     };
     
@@ -251,6 +270,7 @@ const ModelDetails = () => {
                 modelCid: model.cid,
                 modelName: model.name,
                 modelPrice: model.price,
+                walletAddress: getWalletAddress() || undefined,
               }),
             }
           );

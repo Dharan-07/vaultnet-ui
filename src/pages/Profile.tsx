@@ -12,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { getWalletAddress, getBalance, connectWallet } from '@/lib/web3';
 import { useOnChainModels } from '@/hooks/useOnChainModels';
-import { supabase } from '@/integrations/supabase/client';
 import { downloadFromIPFS } from '@/lib/ipfs';
 import { Link } from 'react-router-dom';
 
@@ -44,7 +43,7 @@ const Profile = () => {
     setIsLoaded(true);
   }, []);
 
-  // Fetch purchased models using Firebase UID directly
+  // Fetch purchased models using edge function with Firebase auth
   useEffect(() => {
     const fetchPurchases = async () => {
       if (!user?.id) {
@@ -53,15 +52,34 @@ const Profile = () => {
       }
       
       try {
-        // Query purchases directly using the Firebase UID stored in user_id
-        const { data, error } = await supabase
-          .from('model_purchases')
-          .select('id, model_id, model_cid, model_name, model_price, purchased_at')
-          .eq('user_id', user.id)
-          .order('purchased_at', { ascending: false });
+        const currentUser = await import('@/lib/firebase').then(m => m.auth.currentUser);
+        if (!currentUser) {
+          setLoadingPurchases(false);
+          return;
+        }
         
-        if (error) throw error;
-        setPurchasedModels(data || []);
+        const idToken = await currentUser.getIdToken();
+        
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-purchases`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${idToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              walletAddress: walletAddress || undefined,
+            }),
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch purchases');
+        }
+        
+        const data = await response.json();
+        setPurchasedModels(data.purchases || []);
       } catch (error) {
         logger.error('Error fetching purchases:', error);
       } finally {
@@ -70,7 +88,7 @@ const Profile = () => {
     };
     
     fetchPurchases();
-  }, [user?.id]);
+  }, [user?.id, walletAddress]);
 
   const handleConnectWallet = async () => {
     setIsConnecting(true);
