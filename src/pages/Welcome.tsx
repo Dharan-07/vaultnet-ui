@@ -148,7 +148,7 @@ const Welcome = () => {
 
   const scrollToAbout = () => {
     const aboutSection = document.getElementById('about-section');
-    aboutSection?.scrollIntoView({ behavior: 'smooth' });
+    aboutSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
@@ -347,7 +347,7 @@ const Welcome = () => {
           </div>
 
           {/* Scrollable Content */}
-          <ScrollArea className="h-[60vh] pr-4">
+        <ScrollArea className="h-[60vh] pr-4 smooth-scroll [&_[data-radix-scroll-area-viewport]]:scroll-smooth [&_[data-radix-scroll-area-viewport]]:!overflow-y-auto">
             <div className="space-y-6">
               {aboutSections.map((section, idx) => {
                 const Icon = section.icon;
@@ -360,7 +360,10 @@ const Welcome = () => {
                         ? 'opacity-100 translate-y-0'
                         : 'opacity-0 translate-y-8'
                     }`}
-                    style={{ transitionDelay: `${idx * 100}ms` }}
+                    style={{ 
+                      transitionDelay: `${idx * 80}ms`,
+                      transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}
                   >
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
@@ -405,7 +408,8 @@ const Welcome = () => {
               {/* Scroll to Instructions indicator */}
               <button 
                 onClick={() => document.getElementById('instructions-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="flex flex-col items-center gap-2 cursor-pointer mx-auto mt-8 hover:scale-110 transition-transform"
+                className="flex flex-col items-center gap-2 cursor-pointer mx-auto mt-8 hover:scale-110 transition-transform duration-500"
+                style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
               >
                 <span className="text-sm text-foreground/50">View Instructions</span>
                 <ChevronDown className="w-6 h-6 text-primary animate-bounce" />
