@@ -126,21 +126,21 @@ const InstructionsSection = () => {
   }, []);
 
   return (
-    <section id="instructions-section" className="min-h-screen relative py-20 px-6">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background z-0" />
+    <section id="instructions-section" className="min-h-screen relative py-20 px-6 gradient-primary">
+      {/* Background overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/20 z-0" />
       
       <div className="max-w-5xl mx-auto relative z-10">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
-            <HelpCircle className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">User Guide</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 border border-white/30 mb-4">
+            <HelpCircle className="w-4 h-4 text-white" />
+            <span className="text-sm font-medium text-white">User Guide</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            How to Use <span className="text-primary">VaultNet</span>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            How to Use <span className="text-white/90">VaultNet</span>
           </h2>
-          <p className="text-lg text-foreground/60 max-w-xl mx-auto">
+          <p className="text-lg text-white/80 max-w-xl mx-auto">
             Quick guide to get started with our decentralized AI platform
           </p>
         </div>
@@ -154,7 +154,7 @@ const InstructionsSection = () => {
                 <div
                   key={idx}
                   ref={(el) => (itemRefs.current[idx] = el)}
-                  className={`group rounded-2xl backdrop-blur-md bg-card/50 border border-border/50 hover:border-primary/30 transition-all duration-700 hover:shadow-lg hover:shadow-primary/10 overflow-hidden ${
+                  className={`group rounded-2xl backdrop-blur-md bg-white/10 border border-white/20 hover:border-white/40 transition-all duration-700 hover:shadow-lg hover:shadow-white/10 overflow-hidden ${
                     visibleItems.has(idx)
                       ? 'opacity-100 translate-x-0'
                       : 'opacity-0 -translate-x-8'
@@ -165,14 +165,14 @@ const InstructionsSection = () => {
                     <AccordionItem value={`item-${idx}`} className="border-none">
                       <AccordionTrigger className="px-6 py-4 hover:no-underline">
                         <div className="flex items-center gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                            <Icon className="w-6 h-6 text-primary" />
+                          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                            <Icon className="w-6 h-6 text-white" />
                           </div>
                           <div className="text-left">
-                            <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                            <h3 className="text-lg font-semibold text-white group-hover:text-white/90 transition-colors">
                               {instruction.title}
                             </h3>
-                            <p className="text-sm text-foreground/60">
+                            <p className="text-sm text-white/70">
                               {instruction.description}
                             </p>
                           </div>
@@ -182,10 +182,10 @@ const InstructionsSection = () => {
                         <div className="pl-16 space-y-3">
                           {instruction.steps.map((step, stepIdx) => (
                             <div key={stepIdx} className="flex items-start gap-3">
-                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center mt-0.5">
-                                <span className="text-xs font-bold text-primary">{stepIdx + 1}</span>
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center mt-0.5">
+                                <span className="text-xs font-bold text-white">{stepIdx + 1}</span>
                               </div>
-                              <p className="text-foreground/70 leading-relaxed">{step}</p>
+                              <p className="text-white/80 leading-relaxed">{step}</p>
                             </div>
                           ))}
                         </div>
@@ -199,25 +199,25 @@ const InstructionsSection = () => {
 
           {/* FAQ Section */}
           <div className="mt-12 mb-8">
-            <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
+            <h3 className="text-2xl font-bold text-white mb-6 text-center">
               FAQ
             </h3>
             <div className="space-y-3">
               {faqs.map((faq, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl backdrop-blur-md bg-card/30 border border-border/50 hover:border-primary/30 transition-all duration-300"
+                  className="rounded-xl backdrop-blur-md bg-white/10 border border-white/20 hover:border-white/40 transition-all duration-300"
                 >
                   <Accordion type="single" collapsible>
                     <AccordionItem value={`faq-${idx}`} className="border-none">
                       <AccordionTrigger className="px-6 py-4 hover:no-underline text-left">
                         <div className="flex items-center gap-3">
-                          <ChevronRight className="w-4 h-4 text-primary flex-shrink-0" />
-                          <span className="font-medium text-foreground">{faq.question}</span>
+                          <ChevronRight className="w-4 h-4 text-white flex-shrink-0" />
+                          <span className="font-medium text-white">{faq.question}</span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="px-6 pb-4">
-                        <p className="text-foreground/70 pl-7 leading-relaxed">{faq.answer}</p>
+                        <p className="text-white/80 pl-7 leading-relaxed">{faq.answer}</p>
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
