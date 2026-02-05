@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -10,6 +10,7 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -32,6 +33,8 @@ interface UserProfile {
   name: string;
   walletAddress?: string;
   emailVerified: boolean;
+  profilePhotoUrl?: string;
+  bio?: string;
 }
 
 interface AuthContextType {
@@ -45,6 +48,8 @@ interface AuthContextType {
   connectWallet: (walletAddress: string) => Promise<void>;
   disconnectWallet: () => Promise<void>;
   resendVerificationEmail: () => Promise<{ error?: string }>;
+  updateProfile: (data: { name?: string; bio?: string }) => Promise<{ error?: string }>;
+  uploadProfilePhoto: (file: File) => Promise<{ error?: string; url?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,6 +81,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           name: data.name || '',
           walletAddress: data.walletAddress || undefined,
           emailVerified: fbUser.emailVerified,
+          profilePhotoUrl: data.profilePhotoUrl || undefined,
+          bio: data.bio || undefined,
         });
         return;
       }
@@ -104,6 +111,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: fbUser.email || '',
         name: (fallbackData.name as string) || '',
         emailVerified: fbUser.emailVerified,
+        profilePhotoUrl: undefined,
+        bio: undefined,
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -112,6 +121,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: fbUser.email || '',
         name: '',
         emailVerified: fbUser.emailVerified,
+        profilePhotoUrl: undefined,
+        bio: undefined,
       });
     }
   };
@@ -372,6 +383,81 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateProfile = async (data: { name?: string; bio?: string }): Promise<{ error?: string }> => {
+    try {
+      if (!user || !firebaseUser) {
+        return { error: 'Must be logged in to update profile' };
+      }
+
+      if (data.name) {
+        const nameResult = nameSchema.safeParse(data.name);
+        if (!nameResult.success) {
+          return { error: nameResult.error.errors[0].message };
+        }
+      }
+
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      const updateData: Record<string, any> = {
+        updatedAt: serverTimestamp(),
+      };
+
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.bio !== undefined) updateData.bio = data.bio;
+
+      await updateDoc(userRef, updateData);
+
+      setUser({
+        ...user,
+        name: data.name ?? user.name,
+        bio: data.bio ?? user.bio,
+      });
+
+      return {};
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      return { error: 'Failed to update profile. Please try again.' };
+    }
+  };
+
+  const uploadProfilePhoto = async (file: File): Promise<{ error?: string; url?: string }> => {
+    try {
+      if (!user || !firebaseUser) {
+        return { error: 'Must be logged in to upload photo' };
+      }
+
+      if (!file.type.startsWith('image/')) {
+        return { error: 'Please upload an image file' };
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        return { error: 'Image must be less than 5MB' };
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `profile_${firebaseUser.uid}_${Date.now()}.${fileExt}`;
+      const storageRef = ref(storage, `profile_photos/${fileName}`);
+
+      await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(storageRef);
+
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      await updateDoc(userRef, {
+        profilePhotoUrl: downloadUrl,
+        updatedAt: serverTimestamp(),
+      });
+
+      setUser({
+        ...user,
+        profilePhotoUrl: downloadUrl,
+      });
+
+      return { url: downloadUrl };
+    } catch (error: any) {
+      console.error('Upload profile photo error:', error);
+      return { error: 'Failed to upload photo. Please try again.' };
+    }
+  };
+
   const value = {
     user,
     isAuthenticated: !!user,
@@ -383,6 +469,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     connectWallet,
     disconnectWallet,
     resendVerificationEmail,
+    updateProfile,
+    uploadProfilePhoto,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
