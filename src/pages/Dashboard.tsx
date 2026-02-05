@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Upload, Download, History, Trash2, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
+import { Upload, Download, History, Trash2, Loader2, ExternalLink, RefreshCw, User, Edit2 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import { fetchMetadataFromIPFS, downloadFromIPFS, getIPFSUrl, ModelMetadata } fr
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { EditProfileDialog } from '@/components/EditProfileDialog';
 
 interface EnrichedModel extends ModelData {
   metadata?: ModelMetadata;
@@ -155,19 +157,50 @@ const Dashboard = () => {
       <Navbar />
 
       <div className="container mx-auto px-4 py-8 flex-1">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">My Dashboard</h1>
-            <p className="text-muted-foreground">
-              Manage your on-chain models • {formatAddress(walletAddress)}
-            </p>
+        {/* User Profile Header */}
+        <Card className="mb-8 overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Avatar className="w-16 h-16 border-4 border-background shadow-lg ring-2 ring-primary/20 transition-all duration-300 hover:ring-primary/40 hover:scale-105">
+                  <AvatarImage 
+                    src={user?.profilePhotoUrl} 
+                    alt={user?.name || 'Profile'} 
+                  />
+                  <AvatarFallback className="text-xl bg-primary/10 text-primary">
+                    {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : <User className="w-8 h-8" />}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h1 className="text-2xl font-bold">{user?.name || 'Anonymous User'}</h1>
+                  <p className="text-muted-foreground text-sm">
+                    {user?.email} • {formatAddress(walletAddress)}
+                  </p>
+                  {user?.bio && (
+                    <p className="text-sm text-muted-foreground mt-1 italic max-w-md">"{user.bio}"</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <EditProfileDialog
+                  trigger={
+                    <Button variant="outline" size="sm" className="gap-2 hover:bg-primary/10 transition-colors">
+                      <Edit2 className="w-4 h-4" />
+                      Edit Profile
+                    </Button>
+                  }
+                />
+                <Button variant="outline" onClick={fetchModels} disabled={isLoading}>
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
+            </div>
           </div>
-          <Button variant="outline" onClick={fetchModels} disabled={isLoading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
+        </Card>
 
+        <h2 className="text-2xl font-bold mb-4">My Dashboard</h2>
+        
         {/* Stats Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card>

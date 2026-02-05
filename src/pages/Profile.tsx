@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Wallet, Mail, Calendar, Shield, ExternalLink, Copy, Check, Download, Package, ShoppingBag, Loader2 } from 'lucide-react';
+import { User, Wallet, Mail, Calendar, Shield, ExternalLink, Copy, Check, Download, Package, ShoppingBag, Loader2, Edit2 } from 'lucide-react';
 import logger from '@/lib/logger';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -14,6 +14,8 @@ import { getWalletAddress, getBalance, connectWallet } from '@/lib/web3';
 import { useOnChainModels } from '@/hooks/useOnChainModels';
 import { downloadFromIPFS } from '@/lib/ipfs';
 import { Link } from 'react-router-dom';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { EditProfileDialog } from '@/components/EditProfileDialog';
 
 interface PurchasedModel {
   id: string;
@@ -174,6 +176,15 @@ const Profile = () => {
     }
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -193,19 +204,38 @@ const Profile = () => {
               isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
             }`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Account Information
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    Account Information
+                  </CardTitle>
+                  <EditProfileDialog
+                    trigger={
+                      <Button variant="outline" size="sm" className="gap-2 hover:bg-primary/10 transition-colors">
+                        <Edit2 className="w-4 h-4" />
+                        Edit Profile
+                      </Button>
+                    }
+                  />
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-10 h-10 text-primary" />
-                  </div>
+                  <Avatar className="w-20 h-20 border-4 border-background shadow-lg ring-2 ring-primary/20 transition-all duration-300 hover:ring-primary/40">
+                    <AvatarImage 
+                      src={user?.profilePhotoUrl} 
+                      alt={user?.name || 'Profile'} 
+                    />
+                    <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                      {user?.name ? getInitials(user.name) : <User className="w-10 h-10" />}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <h3 className="text-xl font-semibold">{user?.name || 'Anonymous'}</h3>
                     <p className="text-muted-foreground">{user?.email || 'No email'}</p>
+                    {user?.bio && (
+                      <p className="text-sm text-muted-foreground mt-1 italic">"{user.bio}"</p>
+                    )}
                   </div>
                 </div>
 
