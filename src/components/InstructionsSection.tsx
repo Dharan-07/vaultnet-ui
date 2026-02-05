@@ -146,7 +146,7 @@ const InstructionsSection = () => {
         </div>
 
         {/* Instructions Grid */}
-        <ScrollArea className="h-[60vh] pr-4">
+        <ScrollArea className="h-[60vh] pr-4 smooth-scroll [&_[data-radix-scroll-area-viewport]]:scroll-smooth [&_[data-radix-scroll-area-viewport]]:!overflow-y-auto">
           <div className="space-y-4 mb-12">
             {instructions.map((instruction, idx) => {
               const Icon = instruction.icon;
@@ -154,12 +154,15 @@ const InstructionsSection = () => {
                 <div
                   key={idx}
                   ref={(el) => (itemRefs.current[idx] = el)}
-                  className={`group rounded-2xl backdrop-blur-md bg-white/10 border border-white/20 hover:border-white/40 transition-all duration-700 hover:shadow-lg hover:shadow-white/10 overflow-hidden ${
+                  className={`group rounded-2xl backdrop-blur-md bg-white/10 border border-white/20 hover:border-white/40 transition-all duration-500 hover:shadow-lg hover:shadow-white/10 overflow-hidden ${
                     visibleItems.has(idx)
                       ? 'opacity-100 translate-x-0'
                       : 'opacity-0 -translate-x-8'
                   }`}
-                  style={{ transitionDelay: `${idx * 50}ms` }}
+                  style={{ 
+                    transitionDelay: `${idx * 60}ms`,
+                    transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                  }}
                 >
                   <Accordion type="single" collapsible>
                     <AccordionItem value={`item-${idx}`} className="border-none">

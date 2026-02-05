@@ -105,6 +105,11 @@ Color palette: Vibrant blue (#3B82F6), Cyan accent (#0EA5E9), Clean white backgr
     scroll-behavior: smooth;
   }
 
+  /* Enhanced smooth scrolling */
+  * {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
     -webkit-overflow-scrolling: touch;
@@ -143,5 +148,28 @@ Color palette: Vibrant blue (#3B82F6), Cyan accent (#0EA5E9), Clean white backgr
 
   .link-smooth {
     @apply relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full;
+  }
+
+  /* Ultra smooth scroll for scroll areas */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .smooth-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .smooth-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .smooth-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  .smooth-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
   }
 }
