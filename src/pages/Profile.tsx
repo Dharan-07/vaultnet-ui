@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Wallet, Mail, Calendar, Shield, ExternalLink, Copy, Check, Download, Package, ShoppingBag, Loader2, Edit2 } from 'lucide-react';
+import { User, Wallet, Mail, Calendar, Shield, ExternalLink, Copy, Check, Download, Package, ShoppingBag, Loader2, Edit2, Globe, MapPin, Twitter, Github, Linkedin } from 'lucide-react';
 import logger from '@/lib/logger';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -250,6 +250,34 @@ const Profile = () => {
                     </div>
                   </div>
 
+                  {user?.location && (
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Location</p>
+                        <p className="font-medium">{user.location}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {user?.website && (
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Website</p>
+                        <a 
+                          href={user.website.startsWith('http') ? user.website : `https://${user.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-primary hover:underline flex items-center gap-1"
+                        >
+                          {user.website}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-3">
                     <Calendar className="w-5 h-5 text-muted-foreground" />
                     <div>
@@ -265,6 +293,50 @@ const Profile = () => {
                       <Badge variant="secondary" className="mt-1">Verified</Badge>
                     </div>
                   </div>
+
+                  {/* Social Links */}
+                  {(user?.twitter || user?.github || user?.linkedin) && (
+                    <>
+                      <Separator />
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-2">
+                          {user?.twitter && (
+                            <a
+                              href={`https://twitter.com/${user.twitter}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                              title={`@${user.twitter}`}
+                            >
+                              <Twitter className="w-5 h-5" />
+                            </a>
+                          )}
+                          {user?.github && (
+                            <a
+                              href={`https://github.com/${user.github}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                              title={user.github}
+                            >
+                              <Github className="w-5 h-5" />
+                            </a>
+                          )}
+                          {user?.linkedin && (
+                            <a
+                              href={`https://linkedin.com/in/${user.linkedin}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                              title={user.linkedin}
+                            >
+                              <Linkedin className="w-5 h-5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

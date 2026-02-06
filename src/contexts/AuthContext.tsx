@@ -35,6 +35,11 @@ interface UserProfile {
   emailVerified: boolean;
   profilePhotoUrl?: string;
   bio?: string;
+  website?: string;
+  location?: string;
+  twitter?: string;
+  github?: string;
+  linkedin?: string;
 }
 
 interface AuthContextType {
@@ -48,8 +53,17 @@ interface AuthContextType {
   connectWallet: (walletAddress: string) => Promise<void>;
   disconnectWallet: () => Promise<void>;
   resendVerificationEmail: () => Promise<{ error?: string }>;
-  updateProfile: (data: { name?: string; bio?: string }) => Promise<{ error?: string }>;
-  uploadProfilePhoto: (file: File) => Promise<{ error?: string; url?: string }>;
+  updateProfile: (data: { 
+    name?: string; 
+    bio?: string; 
+    website?: string;
+    location?: string;
+    twitter?: string;
+    github?: string;
+    linkedin?: string;
+  }) => Promise<{ error?: string }>;
+  uploadProfilePhoto: (file: File | Blob) => Promise<{ error?: string; url?: string }>;
+  deleteProfilePhoto: () => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -83,6 +97,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           emailVerified: fbUser.emailVerified,
           profilePhotoUrl: data.profilePhotoUrl || undefined,
           bio: data.bio || undefined,
+          website: data.website || undefined,
+          location: data.location || undefined,
+          twitter: data.twitter || undefined,
+          github: data.github || undefined,
+          linkedin: data.linkedin || undefined,
         });
         return;
       }
@@ -113,6 +132,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailVerified: fbUser.emailVerified,
         profilePhotoUrl: undefined,
         bio: undefined,
+        website: undefined,
+        location: undefined,
+        twitter: undefined,
+        github: undefined,
+        linkedin: undefined,
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -383,7 +407,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateProfile = async (data: { name?: string; bio?: string }): Promise<{ error?: string }> => {
+  const updateProfile = async (data: { 
+    name?: string; 
+    bio?: string;
+    website?: string;
+    location?: string;
+    twitter?: string;
+    github?: string;
+    linkedin?: string;
+  }): Promise<{ error?: string }> => {
     try {
       if (!user || !firebaseUser) {
         return { error: 'Must be logged in to update profile' };
@@ -403,6 +435,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (data.name !== undefined) updateData.name = data.name;
       if (data.bio !== undefined) updateData.bio = data.bio;
+      if (data.website !== undefined) updateData.website = data.website;
+      if (data.location !== undefined) updateData.location = data.location;
+      if (data.twitter !== undefined) updateData.twitter = data.twitter;
+      if (data.github !== undefined) updateData.github = data.github;
+      if (data.linkedin !== undefined) updateData.linkedin = data.linkedin;
 
       await updateDoc(userRef, updateData);
 
@@ -410,6 +447,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ...user,
         name: data.name ?? user.name,
         bio: data.bio ?? user.bio,
+        website: data.website ?? user.website,
+        location: data.location ?? user.location,
+        twitter: data.twitter ?? user.twitter,
+        github: data.github ?? user.github,
+        linkedin: data.linkedin ?? user.linkedin,
       });
 
       return {};
@@ -419,13 +461,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const uploadProfilePhoto = async (file: File): Promise<{ error?: string; url?: string }> => {
+  const uploadProfilePhoto = async (file: File | Blob): Promise<{ error?: string; url?: string }> => {
     try {
       if (!user || !firebaseUser) {
         return { error: 'Must be logged in to upload photo' };
       }
 
-      if (!file.type.startsWith('image/')) {
+      // Check file type for File objects
+      if (file instanceof File && !file.type.startsWith('image/')) {
         return { error: 'Please upload an image file' };
       }
 
@@ -433,7 +476,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: 'Image must be less than 5MB' };
       }
 
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file instanceof File ? file.name.split('.').pop() : 'jpg';
       const fileName = `profile_${firebaseUser.uid}_${Date.now()}.${fileExt}`;
       const storageRef = ref(storage, `profile_photos/${fileName}`);
 
@@ -458,6 +501,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const deleteProfilePhoto = async (): Promise<{ error?: string }> => {
+    try {
+      if (!user || !firebaseUser) {
+        return { error: 'Must be logged in to delete photo' };
+      }
+
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      await updateDoc(userRef, {
+        profilePhotoUrl: null,
+        updatedAt: serverTimestamp(),
+      });
+
+      setUser({
+        ...user,
+        profilePhotoUrl: undefined,
+      });
+
+      return {};
+    } catch (error: any) {
+      console.error('Delete profile photo error:', error);
+      return { error: 'Failed to delete photo. Please try again.' };
+    }
+  };
+
   const value = {
     user,
     isAuthenticated: !!user,
@@ -471,6 +538,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     resendVerificationEmail,
     updateProfile,
     uploadProfilePhoto,
+    deleteProfilePhoto,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

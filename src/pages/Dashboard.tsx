@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Upload, Download, History, Trash2, Loader2, ExternalLink, RefreshCw, User, Edit2 } from 'lucide-react';
+import { Upload, Download, History, Trash2, Loader2, ExternalLink, RefreshCw, User, Edit2, Globe, MapPin, Twitter, Github, Linkedin } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -178,6 +178,61 @@ const Dashboard = () => {
                   </p>
                   {user?.bio && (
                     <p className="text-sm text-muted-foreground mt-1 italic max-w-md">"{user.bio}"</p>
+                  )}
+                  {(user?.location || user?.website) && (
+                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                      {user?.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {user.location}
+                        </span>
+                      )}
+                      {user?.website && (
+                        <a 
+                          href={user.website.startsWith('http') ? user.website : `https://${user.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 hover:text-primary transition-colors"
+                        >
+                          <Globe className="w-3 h-3" />
+                          Website
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {(user?.twitter || user?.github || user?.linkedin) && (
+                    <div className="flex items-center gap-2 mt-2">
+                      {user?.twitter && (
+                        <a
+                          href={`https://twitter.com/${user.twitter}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
+                        >
+                          <Twitter className="w-4 h-4" />
+                        </a>
+                      )}
+                      {user?.github && (
+                        <a
+                          href={`https://github.com/${user.github}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
+                        >
+                          <Github className="w-4 h-4" />
+                        </a>
+                      )}
+                      {user?.linkedin && (
+                        <a
+                          href={`https://linkedin.com/in/${user.linkedin}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
+                        >
+                          <Linkedin className="w-4 h-4" />
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
