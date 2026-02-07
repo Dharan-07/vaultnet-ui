@@ -11,7 +11,6 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import { supabase } from '@/integrations/supabase/client';
 
 // Validation schemas
 export const emailSchema = z.string().email('Invalid email address').max(255, 'Email too long');
@@ -475,28 +474,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: 'Image must be less than 5MB' };
       }
 
-      const fileExt = file instanceof File ? file.name.split('.').pop() : 'jpg';
-      const fileName = `${firebaseUser.uid}/profile_${Date.now()}.${fileExt}`;
+      // Get fresh Firebase token
+      const idToken = await firebaseUser.getIdToken(true);
 
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('profile-photos')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
+      // Create FormData for file upload
+      const formData = new FormData();
+      const fileName = file instanceof File ? file.name : `profile_${Date.now()}.jpg`;
+      formData.append('file', file, fileName);
 
-      if (error) {
-        console.error('Supabase upload error:', error);
-        return { error: 'Failed to upload photo. Please try again.' };
+      // Upload via edge function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-profile-photo`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${idToken}`,
+          },
+          body: formData,
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Upload error:', result);
+        return { error: result.error || 'Failed to upload photo. Please try again.' };
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('profile-photos')
-        .getPublicUrl(data.path);
-
-      const downloadUrl = urlData.publicUrl;
+      const downloadUrl = result.url;
 
       // Update Firestore with the new URL
       const userRef = doc(db, 'users', firebaseUser.uid);
@@ -523,16 +528,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: 'Must be logged in to delete photo' };
       }
 
-      // Delete from Supabase Storage - list and remove files in user's folder
-      const { data: files } = await supabase.storage
-        .from('profile-photos')
-        .list(firebaseUser.uid);
+      // Get fresh Firebase token
+      const idToken = await firebaseUser.getIdToken(true);
 
-      if (files && files.length > 0) {
-        const filesToDelete = files.map(f => `${firebaseUser.uid}/${f.name}`);
-        await supabase.storage
-          .from('profile-photos')
-          .remove(filesToDelete);
+      // Delete via edge function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-profile-photo`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Delete error:', result);
+        return { error: result.error || 'Failed to delete photo. Please try again.' };
       }
 
       // Update Firestore
