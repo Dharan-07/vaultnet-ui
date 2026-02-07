@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Shield, Chrome } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,12 +19,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import authBackground from '@/assets/auth-background.jpg';
+import { lovable } from '@/integrations/lovable/index';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isResetLoading, setIsResetLoading] = useState(false);
@@ -33,6 +35,21 @@ export default function SignIn() {
   const { toast } = useToast();
   const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    setError(null);
+    
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    
+    if (error) {
+      setError(error.message || "Failed to sign in with Google");
+      setIsGoogleLoading(false);
+    }
+    // If successful, the page will redirect
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,8 +176,28 @@ export default function SignIn() {
                       </button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
+                  </Button>
+                  
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading || isGoogleLoading}
+                  >
+                    <Chrome className="h-4 w-4" />
+                    {isGoogleLoading ? 'Signing in...' : 'Sign in with Google'}
                   </Button>
                   
                   <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center mt-4">
