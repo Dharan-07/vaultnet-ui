@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -10,7 +10,6 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -477,12 +476,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const fileExt = file instanceof File ? file.name.split('.').pop() : 'jpg';
-      const fileName = `profile_${firebaseUser.uid}_${Date.now()}.${fileExt}`;
-      const storageRef = ref(storage, `profile_photos/${fileName}`);
+      const fileName = `${firebaseUser.uid}/profile_${Date.now()}.${fileExt}`;
 
-      await uploadBytes(storageRef, file);
-      const downloadUrl = await getDownloadURL(storageRef);
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('profile-photos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
+      if (error) {
+        console.error('Supabase upload error:', error);
+        return { error: 'Failed to upload photo. Please try again.' };
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(data.path);
+
+      const downloadUrl = urlData.publicUrl;
+
+      // Update Firestore with the new URL
       const userRef = doc(db, 'users', firebaseUser.uid);
       await updateDoc(userRef, {
         profilePhotoUrl: downloadUrl,
@@ -507,6 +523,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: 'Must be logged in to delete photo' };
       }
 
+      // Delete from Supabase Storage - list and remove files in user's folder
+      const { data: files } = await supabase.storage
+        .from('profile-photos')
+        .list(firebaseUser.uid);
+
+      if (files && files.length > 0) {
+        const filesToDelete = files.map(f => `${firebaseUser.uid}/${f.name}`);
+        await supabase.storage
+          .from('profile-photos')
+          .remove(filesToDelete);
+      }
+
+      // Update Firestore
       const userRef = doc(db, 'users', firebaseUser.uid);
       await updateDoc(userRef, {
         profilePhotoUrl: null,
