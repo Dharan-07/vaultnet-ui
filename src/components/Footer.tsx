@@ -10,7 +10,6 @@ export const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <img src={Logo} alt="VaultNet Logo" className="w-10 h-10" />
               <span className="font-bold text-xl">VaultNet</span>
             </div>
             <p className="text-sm text-muted-foreground">
