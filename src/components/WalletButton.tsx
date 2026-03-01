@@ -3,7 +3,7 @@ import { Wallet, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { connectWallet as web3ConnectWallet, getBalance } from '@/lib/web3';
+import { connectWallet as web3ConnectWallet, getBalance, tryReconnectWallet } from '@/lib/web3';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,14 +20,18 @@ export const WalletButton = () => {
   const { isAuthenticated, user, connectWallet, disconnectWallet } = useAuth();
 
   useEffect(() => {
-    // Fetch balance if wallet is connected
     const fetchBalance = async () => {
       if (user?.walletAddress) {
         try {
-          const bal = await getBalance();
-          setBalance(bal);
+          // Try to silently reconnect before fetching balance
+          const reconnected = await tryReconnectWallet();
+          if (reconnected) {
+            const bal = await getBalance();
+            setBalance(bal);
+          }
         } catch (error) {
-          console.error('Error fetching balance:', error);
+          // Silently fail - user can manually reconnect
+          console.debug('Could not auto-reconnect wallet:', error);
         }
       }
     };
