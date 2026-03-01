@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import authBackground from '@/assets/auth-background.jpg';
+import Logo from '@/assets/vn_logo.png';
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
   <div className="flex items-center gap-2 text-sm">
@@ -151,6 +152,9 @@ export default function SignUp() {
           <div className="w-full md:w-1/2 flex items-center justify-center">
             <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl flex flex-col bg-card/80 backdrop-blur-sm">
               <CardHeader className="space-y-1">
+                <div className="flex justify-center mb-2">
+                  <img src={Logo} alt="VaultNet" className="h-12 w-12" />
+                </div>
                 <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
                 <CardDescription className="text-center">
                   Sign up to start sharing and accessing AI models

@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import Spline from '@splinetool/react-spline';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import InstructionsSection from '@/components/InstructionsSection';
+import Logo from '@/assets/vn_logo.png';
 interface GridNode {
   id: number;
   x: number;
@@ -225,9 +226,9 @@ const Welcome = () => {
             }`}
           >
             <img 
-              //src={Logo} 
-              //alt="VaultNet Logo" 
-              //className="w-40 h-40 hover:scale-110 transition-transform duration-300 cursor-pointer" 
+              src={Logo} 
+              alt="VaultNet Logo" 
+              className="w-40 h-40 hover:scale-110 transition-transform duration-300 cursor-pointer" 
             />
           </div>
           
