@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import authBackground from '@/assets/auth-background.jpg';
+import Logo from '@/assets/vn_logo.png';
 import { lovable } from '@/integrations/lovable/index';
 
 export default function SignIn() {
@@ -113,6 +114,9 @@ export default function SignIn() {
           <div className="w-full md:w-1/2 flex items-center justify-center h-[520px]">
             <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl h-full flex flex-col bg-card/80 backdrop-blur-sm">
               <CardHeader className="space-y-1">
+                <div className="flex justify-center mb-2">
+                  <img src={Logo} alt="VaultNet" className="h-12 w-12" />
+                </div>
                 <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
                 <CardDescription className="text-center">
                   Enter your credentials to access your account
