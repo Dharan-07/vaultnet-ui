@@ -67,15 +67,30 @@ function getContract(signerOrProvider: ethers.Signer | ethers.Provider) {
   return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerOrProvider);
 }
 
+function getEthereum(): any {
+  // Check multiple possible locations for the ethereum provider
+  if (window.ethereum) return window.ethereum;
+  // In iframes, try to access parent's ethereum
+  try {
+    if (window.parent && (window.parent as any).ethereum) {
+      return (window.parent as any).ethereum;
+    }
+  } catch (e) {
+    // Cross-origin access denied - expected in sandboxed iframes
+  }
+  return null;
+}
+
 export async function connectWallet(): Promise<string> {
   try {
-    if (!window.ethereum) {
-      throw new Error('MetaMask is not installed. Please install MetaMask to use this dApp.');
+    const ethereum = getEthereum();
+    if (!ethereum) {
+      throw new Error('MetaMask is not installed or not accessible. If you are in a preview iframe, please open the app in a new tab to connect your wallet.');
     }
 
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
+    await ethereum.request({ method: 'eth_requestAccounts' });
     
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.BrowserProvider(ethereum);
     signer = await provider.getSigner();
     userAddress = await signer.getAddress();
 
@@ -90,6 +105,25 @@ export async function connectWallet(): Promise<string> {
   } catch (error: unknown) {
     logger.error('Error connecting wallet:', error);
     throw error;
+  }
+}
+
+// Silently try to reconnect if wallet was previously connected
+export async function tryReconnectWallet(): Promise<boolean> {
+  try {
+    const ethereum = getEthereum();
+    if (!ethereum) return false;
+
+    const accounts = await ethereum.request({ method: 'eth_accounts' });
+    if (!accounts || accounts.length === 0) return false;
+
+    provider = new ethers.BrowserProvider(ethereum);
+    signer = await provider.getSigner();
+    userAddress = await signer.getAddress();
+    return true;
+  } catch (error) {
+    logger.error('Error reconnecting wallet:', error);
+    return false;
   }
 }
 
@@ -140,9 +174,11 @@ export async function uploadModel(
 
 export async function getModelCount(): Promise<number> {
   try {
-    if (!provider) {
-      provider = new ethers.BrowserProvider(window.ethereum);
+    const ethereum = getEthereum();
+    if (!provider && ethereum) {
+      provider = new ethers.BrowserProvider(ethereum);
     }
+    if (!provider) return 0;
     const contract = getContract(provider);
     const count = await contract.modelCounter();
     return Number(count);
@@ -154,9 +190,11 @@ export async function getModelCount(): Promise<number> {
 
 export async function getModel(modelId: number): Promise<ModelData | null> {
   try {
-    if (!provider) {
-      provider = new ethers.BrowserProvider(window.ethereum);
+    const ethereum = getEthereum();
+    if (!provider && ethereum) {
+      provider = new ethers.BrowserProvider(ethereum);
     }
+    if (!provider) return null;
     const contract = getContract(provider);
     const model = await contract.models(modelId);
     
@@ -258,20 +296,23 @@ export async function getAllModels(): Promise<ModelData[]> {
 }
 
 // Listen for account changes
-if (typeof window !== 'undefined' && window.ethereum) {
-  window.ethereum.on('accountsChanged', (accounts: string[]) => {
-    if (accounts.length === 0) {
-      userAddress = null;
-      signer = null;
-    } else {
-      userAddress = accounts[0];
-      connectWallet().catch((error) => logger.error('Error reconnecting wallet:', error));
-    }
-  });
+if (typeof window !== 'undefined') {
+  const ethereum = getEthereum();
+  if (ethereum) {
+    ethereum.on('accountsChanged', (accounts: string[]) => {
+      if (accounts.length === 0) {
+        userAddress = null;
+        signer = null;
+      } else {
+        userAddress = accounts[0];
+        connectWallet().catch((error) => logger.error('Error reconnecting wallet:', error));
+      }
+    });
 
-  window.ethereum.on('chainChanged', () => {
-    window.location.reload();
-  });
+    ethereum.on('chainChanged', () => {
+      window.location.reload();
+    });
+  }
 }
 
 declare global {
