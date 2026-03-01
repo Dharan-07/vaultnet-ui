@@ -1,6 +1,6 @@
 import { Github, Twitter, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Logo from '@/assets/vn_logo.svg';
+import Logo from '@/assets/vn_logo.png';
 
 export const Footer = () => {
   return (
@@ -10,6 +10,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
+              <img src={Logo} alt="VaultNet" className="h-8 w-8" />
               <span className="font-bold text-xl">VaultNet</span>
             </div>
             <p className="text-sm text-muted-foreground">
