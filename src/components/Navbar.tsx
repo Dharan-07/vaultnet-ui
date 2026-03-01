@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Search, Upload, LayoutDashboard, LogOut, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { WalletButton } from './WalletButton';
-import Logo from '@/assets/vn_logo.svg';
+import Logo from '@/assets/vn_logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
@@ -21,7 +21,8 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Title only, logo removed */}
-          <Link to="/" className="flex items-center group">
+          <Link to="/" className="flex items-center gap-2 group">
+            <img src={Logo} alt="VaultNet" className="h-8 w-8" />
             <span className="font-bold text-xl group-hover:text-primary transition-all duration-300 ease-smooth">
               VaultNet
             </span>
