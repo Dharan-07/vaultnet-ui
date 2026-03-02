@@ -54,6 +54,12 @@ export const Navbar = () => {
                     Upload
                   </Button>
                 </Link>
+                <Link to="/search-users">
+                  <Button variant="ghost" className="gap-2">
+                    <Search className="w-4 h-4" />
+                    Find Users
+                  </Button>
+                </Link>
                 <Link to="/dashboard">
                   <Button variant="ghost" className="gap-2">
                     <LayoutDashboard className="w-4 h-4" />

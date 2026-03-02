@@ -233,6 +233,7 @@ const Profile = () => {
                   <div>
                     <h3 className="text-xl font-semibold">{user?.name || 'Anonymous'}</h3>
                     <p className="text-muted-foreground">{user?.email || 'No email'}</p>
+                    <p className="text-xs font-mono text-muted-foreground mt-1">UID: {user?.id}</p>
                     {user?.bio && (
                       <p className="text-sm text-muted-foreground mt-1 italic">"{user.bio}"</p>
                     )}
