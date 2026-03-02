@@ -220,17 +220,6 @@ const Welcome = () => {
 
         <div className="relative z-30 text-center px-6 max-w-3xl mx-auto transform transition-all duration-1000 hover:scale-[1.02]">
           {/* Animated Logo/Icon */}
-          <div 
-            className={`flex justify-center mb-2 transition-all duration-1000 ${
-              isLoaded ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-            }`}
-          >
-            <img 
-              src={Logo} 
-              alt="VaultNet Logo" 
-              className="w-40 h-40 hover:scale-110 transition-transform duration-300 cursor-pointer" 
-            />
-          </div>
           
           {/* Website Name */}
           <div 
