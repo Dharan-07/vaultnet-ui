@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Database, Shield, Cpu, ArrowRight, ChevronDown, Users, Globe, Lock, Zap, Code, Coins, FileCheck, Network } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo } from 'react';
-import Spline from '@splinetool/react-spline';
+import { lazy, Suspense } from 'react';
+import { WebGLErrorBoundary } from '@/components/WebGLErrorBoundary';
+const Spline = lazy(() => import('@splinetool/react-spline'));
 import { ScrollArea } from '@/components/ui/scroll-area';
 import InstructionsSection from '@/components/InstructionsSection';
 import Logo from '@/assets/vn_logo.png';
@@ -158,9 +160,11 @@ const Welcome = () => {
       <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
         {/* Spline 3D Background */}
         <div className="absolute inset-0 z-0">
-          <Spline
-            scene="https://prod.spline.design/WcdSRk281zM5Rntd/scene.splinecode"
-          />
+          <WebGLErrorBoundary fallback={<div className="w-full h-full bg-gradient-to-br from-primary/20 to-background" />}>
+            <Suspense fallback={<div className="w-full h-full bg-gradient-to-br from-primary/20 to-background" />}>
+              <Spline scene="https://prod.spline.design/WcdSRk281zM5Rntd/scene.splinecode" />
+            </Suspense>
+          </WebGLErrorBoundary>
         </div>
         
         {/* Dark overlay for contrast */}
@@ -317,9 +321,11 @@ const Welcome = () => {
       <section id="about-section" className="min-h-screen relative py-20 px-6">
         {/* Spline 3D Background */}
         <div className="absolute inset-0 z-0">
-          <Spline
-            scene="https://prod.spline.design/3evH-nTngqw-iSJv/scene.splinecode"
-          />
+          <WebGLErrorBoundary fallback={<div className="w-full h-full bg-gradient-to-br from-primary/20 to-background" />}>
+            <Suspense fallback={<div className="w-full h-full bg-gradient-to-br from-primary/20 to-background" />}>
+              <Spline scene="https://prod.spline.design/3evH-nTngqw-iSJv/scene.splinecode" />
+            </Suspense>
+          </WebGLErrorBoundary>
         </div>
         
         {/* Dark overlay for contrast */}
