@@ -1,14 +1,15 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Copy, Check, Loader2 } from 'lucide-react';
+import { Search, User, Copy, Check, Loader2, Wallet, ExternalLink } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserResult {
@@ -28,9 +29,8 @@ export default function UserSearch() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
+  const getInitials = (name: string) =>
+    name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const copyUid = (uid: string) => {
     navigator.clipboard.writeText(uid);
@@ -38,6 +38,8 @@ export default function UserSearch() {
     toast({ title: 'UID copied to clipboard' });
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  const isWalletAddress = (q: string) => /^0x[a-fA-F0-9]{40}$/.test(q);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,26 +54,37 @@ export default function UserSearch() {
       const found: UserResult[] = [];
       const seenIds = new Set<string>();
 
+      const addUser = (id: string, data: any) => {
+        if (seenIds.has(id)) return;
+        found.push({
+          id,
+          name: data.name || '',
+          email: data.email || '',
+          profilePhotoUrl: data.profilePhotoUrl,
+          bio: data.bio,
+          walletAddress: data.walletAddress,
+        });
+        seenIds.add(id);
+      };
+
       // 1. Exact UID lookup
       try {
         const userDoc = await getDoc(doc(db, 'users', q));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          found.push({
-            id: userDoc.id,
-            name: data.name || '',
-            email: data.email || '',
-            profilePhotoUrl: data.profilePhotoUrl,
-            bio: data.bio,
-            walletAddress: data.walletAddress,
-          });
-          seenIds.add(userDoc.id);
-        }
-      } catch {
-        // Not a valid doc ID, continue to name search
+        if (userDoc.exists()) addUser(userDoc.id, userDoc.data());
+      } catch { /* not a valid doc ID */ }
+
+      // 2. Wallet address search
+      if (isWalletAddress(q)) {
+        const walletQuery = query(
+          collection(db, 'users'),
+          where('walletAddress', '==', q),
+          limit(10)
+        );
+        const walletSnap = await getDocs(walletQuery);
+        walletSnap.forEach(d => addUser(d.id, d.data()));
       }
 
-      // 2. Name prefix search
+      // 3. Name prefix search
       const nameQuery = query(
         collection(db, 'users'),
         where('name', '>=', q),
@@ -79,46 +92,20 @@ export default function UserSearch() {
         limit(20)
       );
       const nameSnap = await getDocs(nameQuery);
-      nameSnap.forEach((d) => {
-        if (!seenIds.has(d.id)) {
-          const data = d.data();
-          found.push({
-            id: d.id,
-            name: data.name || '',
-            email: data.email || '',
-            profilePhotoUrl: data.profilePhotoUrl,
-            bio: data.bio,
-            walletAddress: data.walletAddress,
-          });
-          seenIds.add(d.id);
-        }
-      });
+      nameSnap.forEach(d => addUser(d.id, d.data()));
 
-      // 3. Case-insensitive: also try lowercase prefix
+      // 4. Case-insensitive: capitalize first letter
       const lowerQ = q.toLowerCase();
-      const lowerFirstChar = lowerQ.charAt(0).toUpperCase() + lowerQ.slice(1);
-      if (lowerFirstChar !== q) {
+      const capitalized = lowerQ.charAt(0).toUpperCase() + lowerQ.slice(1);
+      if (capitalized !== q) {
         const altQuery = query(
           collection(db, 'users'),
-          where('name', '>=', lowerFirstChar),
-          where('name', '<=', lowerFirstChar + '\uf8ff'),
+          where('name', '>=', capitalized),
+          where('name', '<=', capitalized + '\uf8ff'),
           limit(20)
         );
         const altSnap = await getDocs(altQuery);
-        altSnap.forEach((d) => {
-          if (!seenIds.has(d.id)) {
-            const data = d.data();
-            found.push({
-              id: d.id,
-              name: data.name || '',
-              email: data.email || '',
-              profilePhotoUrl: data.profilePhotoUrl,
-              bio: data.bio,
-              walletAddress: data.walletAddress,
-            });
-            seenIds.add(d.id);
-          }
-        });
+        altSnap.forEach(d => addUser(d.id, d.data()));
       }
 
       setResults(found);
@@ -138,7 +125,7 @@ export default function UserSearch() {
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl font-bold mb-2">Find Users</h1>
           <p className="text-muted-foreground mb-8">
-            Search by User ID or profile name
+            Search by User ID, profile name, or wallet address
           </p>
 
           <form onSubmit={handleSearch} className="mb-8">
@@ -146,7 +133,7 @@ export default function UserSearch() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Enter UID or name..."
+                placeholder="Enter UID, name, or wallet address (0x...)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 pr-24 h-12 text-base text-foreground"
@@ -195,7 +182,7 @@ export default function UserSearch() {
                       {user.bio && (
                         <p className="text-sm text-muted-foreground truncate">{user.bio}</p>
                       )}
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
                         <Badge variant="outline" className="font-mono text-xs">
                           UID: {user.id.slice(0, 8)}...
                         </Badge>
@@ -210,14 +197,21 @@ export default function UserSearch() {
                             <Copy className="w-3.5 h-3.5" />
                           )}
                         </button>
+                        {user.walletAddress && (
+                          <Badge variant="secondary" className="font-mono text-xs gap-1">
+                            <Wallet className="w-3 h-3" />
+                            {user.walletAddress.slice(0, 6)}...{user.walletAddress.slice(-4)}
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
-                    {user.walletAddress && (
-                      <Badge variant="secondary" className="hidden sm:inline-flex">
-                        Wallet Connected
-                      </Badge>
-                    )}
+                    <Link to={`/user/${user.id}`}>
+                      <Button variant="outline" size="sm" className="gap-1 shrink-0">
+                        View
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}

@@ -17,6 +17,7 @@ import Datasets from "./pages/Datasets";
 import UploadDataset from "./pages/UploadDataset";
 import Profile from "./pages/Profile";
 import UserSearch from "./pages/UserSearch";
+import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/search-users" element={<ProtectedRoute><UserSearch /></ProtectedRoute>} />
+            <Route path="/user/:uid" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
