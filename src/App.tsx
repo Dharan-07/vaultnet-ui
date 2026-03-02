@@ -16,6 +16,7 @@ import SignUp from "./pages/SignUp";
 import Datasets from "./pages/Datasets";
 import UploadDataset from "./pages/UploadDataset";
 import Profile from "./pages/Profile";
+import UserSearch from "./pages/UserSearch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/search-users" element={<ProtectedRoute><UserSearch /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
