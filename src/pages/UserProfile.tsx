@@ -7,9 +7,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { User, Mail, Wallet, Globe, MapPin, Twitter, Github, Linkedin, ExternalLink, ArrowLeft, Copy, Check, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  User, Mail, Wallet, Globe, MapPin, Twitter, Github, Linkedin,
+  ExternalLink, ArrowLeft, Copy, Check, Loader2, MessageSquare, Box, Tag
+} from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { getAllModels, ModelData } from '@/lib/web3';
+import { fetchMetadataFromIPFS, ModelMetadata } from '@/lib/ipfs';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserProfileData {
@@ -26,11 +36,19 @@ interface UserProfileData {
   linkedin?: string;
 }
 
+interface EnrichedModel extends ModelData {
+  metadata?: ModelMetadata | null;
+}
+
 export default function UserProfile() {
   const { uid } = useParams<{ uid: string }>();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [models, setModels] = useState<EnrichedModel[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactMessage, setContactMessage] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,11 +81,48 @@ export default function UserProfile() {
     fetchProfile();
   }, [uid]);
 
+  // Fetch on-chain models for this user's wallet
+  useEffect(() => {
+    const fetchUserModels = async () => {
+      if (!profile?.walletAddress) return;
+      setModelsLoading(true);
+      try {
+        const allModels = await getAllModels();
+        const userModels = allModels.filter(
+          (m) => m.uploader.toLowerCase() === profile.walletAddress!.toLowerCase()
+        );
+        const enriched: EnrichedModel[] = await Promise.all(
+          userModels.map(async (model) => {
+            const metadata = await fetchMetadataFromIPFS(model.cid).catch(() => null);
+            return { ...model, metadata };
+          })
+        );
+        setModels(enriched);
+      } catch (error) {
+        console.error('Error fetching user models:', error);
+      } finally {
+        setModelsLoading(false);
+      }
+    };
+    fetchUserModels();
+  }, [profile?.walletAddress]);
+
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     toast({ title: `${field} copied to clipboard` });
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleSendContact = () => {
+    if (!contactMessage.trim()) return;
+    // Open mailto with pre-filled subject and body
+    const subject = encodeURIComponent(`Message from VaultNet user`);
+    const body = encodeURIComponent(contactMessage);
+    window.open(`mailto:${profile?.email}?subject=${subject}&body=${body}`, '_blank');
+    setContactOpen(false);
+    setContactMessage('');
+    toast({ title: 'Email client opened', description: 'Your message has been prepared in your email client.' });
   };
 
   const getInitials = (name: string) =>
@@ -148,13 +203,26 @@ export default function UserProfile() {
                       </Badge>
                     )}
                   </div>
+
+                  {/* Contact Button */}
+                  {profile.email && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 gap-2"
+                      onClick={() => setContactOpen(true)}
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Contact
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Details */}
-          <Card>
+          <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-lg">Profile Details</CardTitle>
             </CardHeader>
@@ -207,7 +275,6 @@ export default function UserProfile() {
                 </div>
               )}
 
-              {/* Social Links */}
               {(profile.twitter || profile.github || profile.linkedin) && (
                 <>
                   <Separator />
@@ -238,8 +305,107 @@ export default function UserProfile() {
               )}
             </CardContent>
           </Card>
+
+          {/* On-Chain Models */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Box className="w-5 h-5" />
+                Uploaded Models
+                {models.length > 0 && (
+                  <Badge variant="secondary" className="ml-auto">{models.length}</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!profile.walletAddress ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  This user hasn't connected a wallet yet.
+                </p>
+              ) : modelsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="w-10 h-10 rounded" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-3 w-2/3" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : models.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  No on-chain models uploaded yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {models.map((model) => (
+                    <Link
+                      key={model.id}
+                      to={`/model/${model.id}`}
+                      className="flex items-center gap-4 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors group"
+                    >
+                      <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                        <Box className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate group-hover:text-primary transition-colors">
+                          {model.metadata?.name || `Model #${model.id}`}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {model.metadata?.description || 'On-chain AI model'}
+                        </p>
+                        {model.metadata?.tags && model.metadata.tags.length > 0 && (
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {model.metadata.tags.slice(0, 3).map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-semibold">{model.price} ETH</p>
+                        <p className="text-xs text-muted-foreground">v{model.version}</p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Contact Dialog */}
+      <Dialog open={contactOpen} onOpenChange={setContactOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Contact {profile.name || 'User'}</DialogTitle>
+            <DialogDescription>
+              Write a message to send via email to this user.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="Write your message here..."
+            value={contactMessage}
+            onChange={(e) => setContactMessage(e.target.value)}
+            rows={5}
+          />
+          <DialogFooter className="gap-2">
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleSendContact} disabled={!contactMessage.trim()} className="gap-2">
+              <Mail className="w-4 h-4" />
+              Open in Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
