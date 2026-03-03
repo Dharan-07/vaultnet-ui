@@ -17,18 +17,16 @@ export const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur-md sticky top-0 z-50 border-border/50 transition-all duration-300">
+    <nav className="border-b-3 border-foreground bg-card sticky top-0 z-50 shadow-[0_4px_0px_hsl(var(--foreground))]">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Title only, logo removed */}
           <Link to="/" className="flex items-center gap-2 group">
             <img src={Logo} alt="VaultNet" className="h-8 w-8" />
-            <span className="font-bold text-xl group-hover:text-primary transition-all duration-300 ease-smooth">
+            <span className="font-bold text-xl font-mono uppercase tracking-tight group-hover:text-primary transition-colors duration-150">
               VaultNet
             </span>
           </Link>
 
-          {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-1">
             <Link to="/">
               <Button variant="ghost" className="gap-2">
@@ -70,39 +68,38 @@ export const Navbar = () => {
             )}
           </div>
 
-          {/* Auth Section */}
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <>
                 <WalletButton />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="outline" size="icon">
                       <User className="w-5 h-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="w-56 border-2 border-foreground shadow-[4px_4px_0px_hsl(var(--foreground))]">
+                    <DropdownMenuLabel className="font-mono uppercase">My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <div className="px-2 py-1.5 text-sm">
-                      <div className="font-medium">{user?.name}</div>
+                      <div className="font-bold">{user?.name}</div>
                       <div className="text-xs text-muted-foreground">{user?.email}</div>
                     </div>
                     <DropdownMenuSeparator />
                     <Link to="/profile">
-                      <DropdownMenuItem className="gap-2 cursor-pointer">
+                      <DropdownMenuItem className="gap-2 cursor-pointer font-medium">
                         <User className="w-4 h-4" />
                         Profile
                       </DropdownMenuItem>
                     </Link>
                     <Link to="/dashboard">
-                      <DropdownMenuItem className="gap-2 cursor-pointer">
+                      <DropdownMenuItem className="gap-2 cursor-pointer font-medium">
                         <LayoutDashboard className="w-4 h-4" />
                         Dashboard
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="gap-2 cursor-pointer text-destructive">
+                    <DropdownMenuItem onClick={signOut} className="gap-2 cursor-pointer text-destructive font-medium">
                       <LogOut className="w-4 h-4" />
                       Sign Out
                     </DropdownMenuItem>
@@ -112,7 +109,7 @@ export const Navbar = () => {
             ) : (
               <div className="flex items-center gap-2">
                 <Link to="/signin">
-                  <Button variant="ghost">Sign In</Button>
+                  <Button variant="outline">Sign In</Button>
                 </Link>
                 <Link to="/signup">
                   <Button>Sign Up</Button>

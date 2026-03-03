@@ -13,7 +13,6 @@ const Index = () => {
   const trendingModels = getTrendingModels();
 
   const handleSearch = (query: string) => {
-    // Sanitize and limit query length
     const sanitized = query.slice(0, 100).trim();
     if (sanitized) {
       navigate(`/marketplace?q=${encodeURIComponent(sanitized)}`);
@@ -21,17 +20,17 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="gradient-primary text-white py-20">
+      <section className="bg-primary text-primary-foreground py-20 border-b-3 border-foreground">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+            <h1 className="text-5xl md:text-6xl font-bold leading-tight font-mono uppercase">
               Decentralized AI Model Repository
             </h1>
-            <p className="text-xl md:text-2xl text-white/90">
+            <p className="text-xl md:text-2xl opacity-90">
               Discover, share, and monetize AI models on the blockchain
             </p>
             
@@ -47,7 +46,7 @@ const Index = () => {
                 </Button>
               </Link>
               <Link to="/upload">
-                <Button size="lg" variant="outline" className="gap-2 bg-white/10 hover:bg-white/20 text-white border-white/30">
+                <Button size="lg" variant="outline" className="gap-2 bg-primary-foreground/10 text-primary-foreground border-primary-foreground">
                   Upload Model
                 </Button>
               </Link>
@@ -57,38 +56,22 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16 bg-secondary/30 border-b-3 border-foreground">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
-                <Shield className="w-8 h-8 text-primary" />
+            {[
+              { icon: Shield, title: "Decentralized Storage", desc: "Models stored securely on IPFS with blockchain verification" },
+              { icon: Zap, title: "Smart Contracts", desc: "Automated payments and access control via Ethereum" },
+              { icon: Sparkles, title: "Version Control", desc: "Track model evolution with on-chain version history" },
+            ].map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="text-center space-y-4 p-6 bg-card border-3 border-foreground rounded-lg shadow-[4px_4px_0px_hsl(var(--foreground))] hover:shadow-[6px_6px_0px_hsl(var(--foreground))] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-150">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-md bg-accent border-2 border-foreground shadow-[2px_2px_0px_hsl(var(--foreground))]">
+                  <Icon className="w-8 h-8 text-accent-foreground" />
+                </div>
+                <h3 className="text-xl font-bold font-mono">{title}</h3>
+                <p className="text-muted-foreground">{desc}</p>
               </div>
-              <h3 className="text-xl font-semibold">Decentralized Storage</h3>
-              <p className="text-muted-foreground">
-                Models stored securely on IPFS with blockchain verification
-              </p>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
-                <Zap className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold">Smart Contracts</h3>
-              <p className="text-muted-foreground">
-                Automated payments and access control via Ethereum
-              </p>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
-                <Sparkles className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold">Version Control</h3>
-              <p className="text-muted-foreground">
-                Track model evolution with on-chain version history
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -97,9 +80,9 @@ const Index = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold">Featured Models</h2>
+            <h2 className="text-3xl font-bold font-mono uppercase">Featured Models</h2>
             <Link to="/marketplace">
-              <Button variant="ghost" className="gap-2">
+              <Button variant="outline" className="gap-2">
                 View All
                 <ArrowRight className="w-4 h-4" />
               </Button>
@@ -115,12 +98,12 @@ const Index = () => {
       </section>
 
       {/* Trending Models */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16 bg-secondary/30 border-y-3 border-foreground">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold">Trending Models</h2>
+            <h2 className="text-3xl font-bold font-mono uppercase">Trending Models</h2>
             <Link to="/marketplace">
-              <Button variant="ghost" className="gap-2">
+              <Button variant="outline" className="gap-2">
                 View All
                 <ArrowRight className="w-4 h-4" />
               </Button>
@@ -136,20 +119,20 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 gradient-primary text-white">
+      <section className="py-20 bg-secondary border-b-3 border-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to get started?</h2>
-          <p className="text-xl text-white/90 mb-8">
+          <h2 className="text-4xl font-bold mb-4 font-mono uppercase">Ready to get started?</h2>
+          <p className="text-xl text-secondary-foreground/80 mb-8">
             Join the decentralized AI revolution today
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/upload">
-              <Button size="lg" variant="secondary">
+              <Button size="lg">
                 Upload Your Model
               </Button>
             </Link>
             <Link to="/marketplace">
-              <Button size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/30">
+              <Button size="lg" variant="outline">
                 Browse Models
               </Button>
             </Link>
