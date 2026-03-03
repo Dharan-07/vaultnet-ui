@@ -61,7 +61,7 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     if (!allRequirementsMet) {
       setError('Please meet all password requirements');
       return;
@@ -100,7 +100,7 @@ export default function SignUp() {
       });
       navigate('/marketplace');
     }
-    
+
     setIsLoading(false);
   };
 
@@ -148,63 +148,76 @@ export default function SignUp() {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
       <Navbar />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-6xl flex flex-col md:flex-row items-center gap-8">
-          <div className="w-full md:w-1/2 flex items-center justify-center">
-            <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl flex flex-col bg-card/80 backdrop-blur-sm">
-              <CardHeader className="space-y-1">
+        <div className="w-full max-w-[800px]">
+          <Card className="w-full border-primary/20 shadow-2xl overflow-hidden flex flex-row gap-0 bg-white dark:bg-slate-950">
+            {/* Left Panel - Illustration */}
+            <div className="w-1/2 bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+              <img
+                src={authBackground}
+                alt="Crypto/NFT Illustration"
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Right Panel - Sign Up Form */}
+            <div className="w-1/2 bg-white dark:bg-slate-950 flex flex-col p-6 overflow-y-auto">
+              <CardHeader className="space-y-1 p-0 mb-4">
                 <div className="flex justify-center mb-2">
                   <img src={Logo} alt="VaultNet" className="h-12 w-12" />
                 </div>
                 <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
-                <CardDescription className="text-center">
-                  Sign up to start sharing and accessing AI models
+                <CardDescription className="text-center text-sm">
+                  Join the AI marketplace
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-1">
-                <form onSubmit={handleSubmit} className="space-y-4">
+              <CardContent className="flex-1 p-0">
+                <form onSubmit={handleSubmit} className="space-y-3">
                   {error && (
-                    <Alert variant="destructive">
+                    <Alert variant="destructive" className="text-xs">
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="name" className="text-xs font-medium">Full Name</Label>
                     <Input
                       id="name"
                       name="name"
                       type="text"
+                      placeholder="Your full name"
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="text-foreground"
+                      className="text-foreground text-sm h-9"
                       autoComplete="name"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="email" className="text-xs font-medium">Email</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
+                      placeholder="Enter your email"
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="text-foreground"
+                      className="text-foreground text-sm h-9"
                       autoComplete="email"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="password" className="text-xs font-medium">Password</Label>
                     <div className="relative">
                       <Input
                         id="password"
                         name="password"
                         type={showPassword ? 'text' : 'password'}
+                        placeholder="Create a password"
                         value={formData.password}
                         onChange={handleChange}
                         required
-                        className="text-foreground pr-10"
+                        className="text-foreground pr-10 text-sm h-9"
                         autoComplete="new-password"
                       />
                       <button
@@ -212,30 +225,31 @@ export default function SignUp() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                     {formData.password && (
-                      <div className="mt-2 space-y-1 p-3 bg-muted/50 rounded-md">
+                      <div className="mt-2 space-y-0.5 p-2 bg-muted/50 rounded-md">
                         <PasswordRequirement met={passwordRequirements.minLength} text="At least 8 characters" />
-                        <PasswordRequirement met={passwordRequirements.hasUppercase} text="One uppercase letter" />
-                        <PasswordRequirement met={passwordRequirements.hasLowercase} text="One lowercase letter" />
+                        <PasswordRequirement met={passwordRequirements.hasUppercase} text="One uppercase" />
+                        <PasswordRequirement met={passwordRequirements.hasLowercase} text="One lowercase" />
                         <PasswordRequirement met={passwordRequirements.hasNumber} text="One number" />
-                        <PasswordRequirement met={passwordRequirements.hasSpecial} text="One special character" />
+                        <PasswordRequirement met={passwordRequirements.hasSpecial} text="One special char" />
                       </div>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="confirmPassword" className="text-xs font-medium">Confirm Password</Label>
                     <div className="relative">
                       <Input
                         id="confirmPassword"
                         name="confirmPassword"
                         type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Confirm password"
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         required
-                        className="text-foreground pr-10"
+                        className="text-foreground pr-10 text-sm h-9"
                         autoComplete="new-password"
                       />
                       <button
@@ -243,42 +257,27 @@ export default function SignUp() {
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
-                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                     {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                      <p className="text-sm text-destructive">Passwords do not match</p>
+                      <p className="text-xs text-destructive">Passwords do not match</p>
                     )}
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading || !allRequirementsMet}>
+                  <Button type="submit" className="w-full h-9 text-sm font-medium" disabled={isLoading || !allRequirementsMet}>
                     {isLoading ? 'Creating account...' : 'Sign Up'}
                   </Button>
-                  
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center mt-4">
-                    <Shield className="h-3 w-3" />
-                    <span>Email verification required</span>
+
+                  <div className="text-xs text-center text-muted-foreground mt-3 pt-2 border-t">
+                    Already have an account?{' '}
+                    <Link to="/signin" className="text-primary hover:underline font-semibold">
+                      Sign in
+                    </Link>
                   </div>
                 </form>
               </CardContent>
-              <CardFooter className="flex flex-col space-y-2">
-                <div className="text-sm text-muted-foreground text-center">
-                  Already have an account?{' '}
-                  <Link to="/signin" className="text-primary hover:underline font-medium">
-                    Sign in
-                  </Link>
-                </div>
-              </CardFooter>
-            </Card>
-          </div>
-
-          <div className="hidden md:block md:w-1/2 h-[700px] rounded-lg overflow-hidden relative">
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${authBackground})`,
-              }}
-            />
-          </div>
+            </div>
+          </Card>
         </div>
       </main>
       <Footer />

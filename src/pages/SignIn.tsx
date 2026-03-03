@@ -40,11 +40,11 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     setError(null);
-    
+
     const { error } = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
-    
+
     if (error) {
       setError(error.message || "Failed to sign in with Google");
       setIsGoogleLoading(false);
@@ -71,7 +71,7 @@ export default function SignIn() {
       });
       navigate('/marketplace');
     }
-    
+
     setIsLoading(false);
   };
 
@@ -87,7 +87,7 @@ export default function SignIn() {
 
     setIsResetLoading(true);
     const result = await resetPassword(resetEmail);
-    
+
     if (result.error) {
       toast({
         title: "Error",
@@ -102,7 +102,7 @@ export default function SignIn() {
       setShowResetDialog(false);
       setResetEmail('');
     }
-    
+
     setIsResetLoading(false);
   };
 
@@ -110,65 +110,77 @@ export default function SignIn() {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
       <Navbar />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-6xl flex flex-col md:flex-row items-center gap-8">
-          <div className="w-full md:w-1/2 flex items-center justify-center h-[520px]">
-            <Card className="w-full max-w-md relative z-10 border-primary/20 shadow-2xl h-full flex flex-col bg-card/80 backdrop-blur-sm">
-              <CardHeader className="space-y-1">
+        <div className="w-full max-w-[800px]">
+          <Card className="w-full border-primary/20 shadow-2xl overflow-hidden flex flex-row gap-0 bg-white dark:bg-slate-950">
+            {/* Left Panel - Illustration */}
+            <div className="w-1/2 bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+              <img
+                src={authBackground}
+                alt="Crypto/NFT Illustration"
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Right Panel - Sign In Form */}
+            <div className="w-1/2 bg-white dark:bg-slate-950 flex flex-col p-6">
+              <CardHeader className="space-y-1 p-0 mb-4">
                 <div className="flex justify-center mb-2">
                   <img src={Logo} alt="VaultNet" className="h-12 w-12" />
                 </div>
                 <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
-                <CardDescription className="text-center">
-                  Enter your credentials to access your account
+                <CardDescription className="text-center text-sm">
+                  Unlock your world.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-1">
-                <form onSubmit={handleSubmit} className="space-y-4 h-full">
+              <CardContent className="flex-1 p-0">
+                <form onSubmit={handleSubmit} className="space-y-3">
                   {error && (
-                    <Alert variant="destructive">
+                    <Alert variant="destructive" className="text-xs">
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription>
                         {error}
                         {remainingAttempts !== null && remainingAttempts > 0 && (
-                          <span className="block mt-1 text-sm">
+                          <span className="block mt-1 text-xs">
                             {remainingAttempts} attempt{remainingAttempts !== 1 ? 's' : ''} remaining
                           </span>
                         )}
                       </AlertDescription>
                     </Alert>
                   )}
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="email" className="text-xs font-medium">Email</Label>
                     <Input
                       id="email"
                       type="email"
+                      placeholder="Enter your email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="text-foreground"
+                      className="text-foreground text-sm h-9"
                       autoComplete="email"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
+                      <Label htmlFor="password" className="text-xs font-medium">Password</Label>
                       <button
                         type="button"
                         onClick={() => setShowResetDialog(true)}
-                        className="text-sm text-primary hover:underline"
+                        className="text-xs text-primary hover:underline"
                       >
-                        Forgot password?
+                        Forgot?
                       </button>
                     </div>
                     <div className="relative">
                       <Input
                         id="password"
                         type={showPassword ? 'text' : 'password'}
+                        placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="text-foreground pr-10"
+                        className="text-foreground pr-10 text-sm h-9"
                         autoComplete="current-password"
                       />
                       <button
@@ -176,59 +188,44 @@ export default function SignIn() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
+                  <Button type="submit" className="w-full h-9 text-sm font-medium" disabled={isLoading || isGoogleLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
-                  
-                  <div className="relative my-4">
+
+                  <div className="relative my-2">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t border-border" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                      <span className="bg-white dark:bg-slate-950 px-2 text-muted-foreground text-xs">Or</span>
                     </div>
                   </div>
 
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full gap-2"
+                    className="w-full gap-2 h-9 text-sm"
                     onClick={handleGoogleSignIn}
                     disabled={isLoading || isGoogleLoading}
                   >
                     <Chrome className="h-4 w-4" />
-                    {isGoogleLoading ? 'Signing in...' : 'Sign in with Google'}
+                    {isGoogleLoading ? 'Signing in...' : 'Google'}
                   </Button>
-                  
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center mt-4">
-                    <Shield className="h-3 w-3" />
-                    <span>Protected with rate limiting</span>
+
+                  <div className="text-xs text-center text-muted-foreground mt-3 pt-2 border-t">
+                    Don't have an account?{' '}
+                    <Link to="/signup" className="text-primary hover:underline font-semibold">
+                      Create one
+                    </Link>
                   </div>
                 </form>
               </CardContent>
-              <CardFooter className="flex flex-col space-y-2">
-                <div className="text-sm text-muted-foreground text-center">
-                  Don't have an account?{' '}
-                  <Link to="/signup" className="text-primary hover:underline font-medium">
-                    Sign up
-                  </Link>
-                </div>
-              </CardFooter>
-            </Card>
-          </div>
-
-          <div className="hidden md:block md:w-1/2 h-[520px] rounded-lg overflow-hidden relative">
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${authBackground})`,
-              }}
-            />
-          </div>
+            </div>
+          </Card>
         </div>
       </main>
       <Footer />
