@@ -43,27 +43,25 @@ export const Navbar = () => {
           <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
             {isAuthenticated ? (
               <>
-                {!isMobile && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon">
-                        <PanelLeft className="w-5 h-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 border-2 border-foreground shadow-[4px_4px_0px_hsl(var(--foreground))]">
-                      <DropdownMenuLabel className="font-mono uppercase">Navigation</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {navItems.map((item) => (
-                        <Link to={item.url} key={item.title}>
-                          <DropdownMenuItem className="gap-2 cursor-pointer font-medium">
-                            <item.icon className="w-4 h-4" />
-                            {item.title}
-                          </DropdownMenuItem>
-                        </Link>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <PanelLeft className="w-4 md:w-5 h-4 md:h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 md:w-56 border-2 border-foreground shadow-[4px_4px_0px_hsl(var(--foreground))]">
+                    <DropdownMenuLabel className="font-mono uppercase">Navigation</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {navItems.map((item) => (
+                      <Link to={item.url} key={item.title}>
+                        <DropdownMenuItem className="gap-2 cursor-pointer font-medium">
+                          <item.icon className="w-4 h-4" />
+                          {item.title}
+                        </DropdownMenuItem>
+                      </Link>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <WalletButton />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
