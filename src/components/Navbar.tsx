@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom';
-import { LogOut, User, LayoutDashboard, PanelLeft } from 'lucide-react';
+import { LogOut, User, LayoutDashboard, PanelLeft, Upload, Search, Database, Box } from 'lucide-react';
 import { Button } from './ui/button';
 import { WalletButton } from './WalletButton';
 import Logo from '@/assets/vn_logo.png';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSidebar } from './ui/sidebar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,18 +13,13 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 
-const SidebarToggle = () => {
-  try {
-    const { toggleSidebar } = useSidebar();
-    return (
-      <Button variant="outline" size="icon" onClick={toggleSidebar}>
-        <PanelLeft className="w-5 h-5" />
-      </Button>
-    );
-  } catch {
-    return null;
-  }
-};
+const navItems = [
+  { title: 'Models', url: '/marketplace', icon: Box },
+  { title: 'Datasets', url: '/datasets', icon: Database },
+  { title: 'Upload', url: '/upload', icon: Upload },
+  { title: 'Find Users', url: '/search-users', icon: Search },
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+];
 
 export const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
@@ -44,7 +38,25 @@ export const Navbar = () => {
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <>
-                <SidebarToggle />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <PanelLeft className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 border-2 border-foreground shadow-[4px_4px_0px_hsl(var(--foreground))]">
+                    <DropdownMenuLabel className="font-mono uppercase">Navigation</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {navItems.map((item) => (
+                      <Link to={item.url} key={item.title}>
+                        <DropdownMenuItem className="gap-2 cursor-pointer font-medium">
+                          <item.icon className="w-4 h-4" />
+                          {item.title}
+                        </DropdownMenuItem>
+                      </Link>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <WalletButton />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
