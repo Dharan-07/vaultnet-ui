@@ -63,14 +63,14 @@ const ModelDetails = () => {
   useEffect(() => {
     const checkPurchaseStatus = async () => {
       if (!user?.id || !id) return;
-      
+
       try {
         const currentUser = auth.currentUser;
         if (!currentUser) return;
-        
+
         const idToken = await currentUser.getIdToken();
         const walletAddress = getWalletAddress();
-        
+
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-purchases`,
           {
@@ -85,7 +85,7 @@ const ModelDetails = () => {
             }),
           }
         );
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.purchases && data.purchases.length > 0) {
@@ -96,7 +96,7 @@ const ModelDetails = () => {
         logger.error('Error checking purchase status:', error);
       }
     };
-    
+
     checkPurchaseStatus();
   }, [user?.id, id]);
 
@@ -121,7 +121,7 @@ const ModelDetails = () => {
     setIsScanning(true);
     setScanProgress(0);
     setScanPhase(0);
-    
+
     const progressInterval = setInterval(() => {
       setScanProgress(prev => {
         if (prev >= 100) {
@@ -154,14 +154,14 @@ const ModelDetails = () => {
     const fetchModel = async () => {
       setLoading(true);
       const modelId = Number(id);
-      
+
       // First try to get from on-chain
       try {
         const onChainModel = await getModel(modelId);
         if (onChainModel) {
           // Try to fetch metadata from IPFS
           const metadata = await fetchMetadataFromIPFS(onChainModel.cid).catch(() => null);
-          
+
           setModel({
             id: onChainModel.id,
             name: metadata?.name || `Model #${onChainModel.id}`,
@@ -182,7 +182,7 @@ const ModelDetails = () => {
       } catch (error) {
         logger.log("Model not found on-chain, checking mock data");
       }
-      
+
       // Fall back to mock data
       const mockModel = getModelById(modelId);
       if (mockModel) {
@@ -247,7 +247,7 @@ const ModelDetails = () => {
   const handleConfirmPurchase = async () => {
     setShowPurchaseDialog(false);
     setIsBuying(true);
-    
+
     try {
       const result = await buyModelAccess(model.id);
       if (result.success && result.txHash) {
@@ -255,7 +255,7 @@ const ModelDetails = () => {
         const currentUser = auth.currentUser;
         if (currentUser) {
           const idToken = await currentUser.getIdToken();
-          
+
           const response = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-purchase`,
             {
@@ -276,7 +276,7 @@ const ModelDetails = () => {
           );
 
           const verifyResult = await response.json();
-          
+
           if (!response.ok) {
             logger.error('Failed to verify purchase:', verifyResult.error);
             toast({
@@ -286,12 +286,12 @@ const ModelDetails = () => {
             });
             return;
           }
-          
+
           setHasModelAccess(true);
         } else {
           logger.error('No Firebase user found for purchase verification');
         }
-        
+
         toast({
           title: 'Purchase Successful!',
           description: `You now have access to ${model.name}. Transaction: ${result.txHash?.slice(0, 10)}...`,
@@ -359,7 +359,7 @@ const ModelDetails = () => {
 
   const ScanningOverlay = () => {
     const CurrentIcon = scanPhases[scanPhase]?.icon || FileSearch;
-    
+
     return (
       <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center">
         {/* Grid pattern */}
@@ -374,7 +374,7 @@ const ModelDetails = () => {
         </div>
 
         {/* Scan line */}
-        <div 
+        <div
           className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-80"
           style={{
             top: `${(scanProgress % 100)}%`,
@@ -396,7 +396,7 @@ const ModelDetails = () => {
                 <CurrentIcon className="w-12 h-12 text-primary" />
               </div>
             </div>
-            <div 
+            <div
               className="absolute inset-0 w-32 h-32 mx-auto border-2 border-transparent border-t-primary rounded-full animate-spin"
               style={{ animationDuration: '1s' }}
             />
@@ -413,7 +413,7 @@ const ModelDetails = () => {
               <span className="text-primary font-mono">{scanProgress}%</span>
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-100"
                 style={{ width: `${scanProgress}%` }}
               />
@@ -422,11 +422,10 @@ const ModelDetails = () => {
 
           <div className="flex justify-center gap-2">
             {scanPhases.slice(0, -1).map((phase, idx) => (
-              <div 
+              <div
                 key={idx}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  idx <= scanPhase ? 'bg-primary' : 'bg-muted'
-                }`}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${idx <= scanPhase ? 'bg-primary' : 'bg-muted'
+                  }`}
               />
             ))}
           </div>
@@ -438,7 +437,7 @@ const ModelDetails = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
       {isScanning && <ScanningOverlay />}
-      
+
       {/* Purchase Confirmation Dialog */}
       <AlertDialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
         <AlertDialogContent>
@@ -470,83 +469,83 @@ const ModelDetails = () => {
 
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8 flex-1">
+      <div className="w-full px-3 md:px-4 py-6 md:py-8 flex-1">
         {/* Header */}
-        <div className={`mb-8 transition-all duration-1000 ${
-          isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-        }`}>
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2 flex-wrap">
-                <h1 className="text-4xl font-bold">{model.name}</h1>
-                <Badge className="hover:shadow-md transition-all duration-300">{model.category}</Badge>
+        <div className={`mb-6 md:mb-8 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+          }`}>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6 mb-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 md:gap-3 mb-2 flex-wrap">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">{model.name}</h1>
+                <Badge className="text-xs md:text-sm hover:shadow-md transition-all duration-300">{model.category}</Badge>
                 {model.onChain && (
-                  <Badge variant="secondary" className="gap-1 animate-pulse">
+                  <Badge variant="secondary" className="gap-1 animate-pulse text-xs md:text-sm">
                     <LinkIcon className="w-3 h-3" />
                     On-Chain
                   </Badge>
                 )}
               </div>
-              <p className="text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground">
                 by <span className="font-mono hover:text-primary transition-colors cursor-pointer">{formatAddress(model.uploader)}</span>
               </p>
             </div>
-            <div className={`text-right transition-all duration-700 delay-100 ${
-              isLoaded ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
-            }`}>
-              <div className="text-3xl font-bold text-primary">{model.price} ETH</div>
-              <p className="text-sm text-muted-foreground">{model.downloads} downloads</p>
+            <div className={`text-right transition-all duration-700 delay-100 flex-shrink-0 ${isLoaded ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
+              }`}>
+              <div className="text-2xl md:text-3xl font-bold text-primary">{model.price} ETH</div>
+              <p className="text-xs md:text-sm text-muted-foreground">{model.downloads} downloads</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-6">
-            {model.tags.map((tag, idx) => (
-              <Badge 
-                key={idx} 
+          <div className="flex flex-wrap gap-1 md:gap-2 mb-4 md:mb-6">
+            {model.tags.slice(0, 5).map((tag, idx) => (
+              <Badge
+                key={idx}
                 variant="outline"
-                className={`cursor-pointer transition-all duration-300 ${
-                  hoveredTag === idx ? 'bg-primary/20 border-primary scale-110' : 'hover:bg-primary/10'
-                }`}
+                className={`cursor-pointer transition-all duration-300 text-xs md:text-sm ${hoveredTag === idx ? 'bg-primary/20 border-primary scale-110' : 'hover:bg-primary/10'
+                  }`}
                 onMouseEnter={() => setHoveredTag(idx)}
                 onMouseLeave={() => setHoveredTag(null)}
               >
                 {tag}
               </Badge>
             ))}
+            {model.tags.length > 5 && (
+              <Badge variant="outline" className="text-xs md:text-sm cursor-pointer">
+                +{model.tags.length - 5}
+              </Badge>
+            )}
           </div>
 
-          <div className={`flex gap-3 transition-all duration-700 delay-200 ${
-            isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-          }`}>
+          <div className={`flex flex-col sm:flex-row gap-2 md:gap-3 transition-all duration-700 delay-200 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+            }`}>
             {model.onChain ? (
-              <Button size="lg" onClick={handlePurchaseClick} disabled={isBuying || hasModelAccess} className="gap-2 transition-all duration-300 hover:shadow-lg hover:scale-105">
-                {isBuying ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
-                {hasModelAccess ? 'Access Granted' : isBuying ? 'Processing...' : `Buy Access (${model.price} ETH)`}
+              <Button onClick={handlePurchaseClick} disabled={isBuying || hasModelAccess} className="gap-2 transition-all duration-300 hover:shadow-lg hover:scale-105 text-xs md:text-sm">
+                {isBuying ? <Loader2 className="w-4 md:w-5 h-4 md:h-5 animate-spin" /> : <ShoppingCart className="w-4 md:w-5 h-4 md:h-5" />}
+                {hasModelAccess ? 'Access Granted' : isBuying ? 'Processing...' : `Buy (${model.price} ETH)`}
               </Button>
             ) : (
-              <Button size="lg" disabled className="gap-2">
-                <ShoppingCart className="w-5 h-5" />
+              <Button disabled className="gap-2 text-xs md:text-sm">
+                <ShoppingCart className="w-4 md:w-5 h-4 md:h-5" />
                 Demo Model
               </Button>
             )}
-            <Button size="lg" variant="secondary" onClick={handleDownload} className="gap-2 transition-all duration-300 hover:shadow-lg hover:scale-105">
-              <Download className="w-5 h-5" />
+            <Button variant="secondary" onClick={handleDownload} className="gap-2 transition-all duration-300 hover:shadow-lg hover:scale-105 text-xs md:text-sm">
+              <Download className="w-4 md:w-5 h-4 md:h-5" />
               Download
             </Button>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-4 md:gap-8">
           {/* Main Content */}
-          <div className={`lg:col-span-2 space-y-8 transition-all duration-1000 delay-300 ${
-            isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'
-          }`}>
+          <div className={`md:col-span-2 space-y-4 md:space-y-8 transition-all duration-1000 delay-300 ${isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'
+            }`}>
             <Card className="hover:shadow-lg transition-all duration-300">
-              <CardHeader>
-                <CardTitle>Description</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base md:text-lg">Description</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground leading-relaxed">{model.description}</p>
+                <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">{model.description}</p>
               </CardContent>
             </Card>
 
@@ -613,11 +612,10 @@ const ModelDetails = () => {
                   <CardContent>
                     <div className="space-y-4">
                       {mockVersions.map((version, idx) => (
-                        <div 
-                          key={idx} 
-                          className={`border-l-2 border-primary pl-4 pb-4 last:pb-0 p-3 rounded-r-lg transition-all duration-300 hover:bg-muted/50 cursor-default ${
-                            idx === 0 ? 'bg-muted/30' : ''
-                          }`}
+                        <div
+                          key={idx}
+                          className={`border-l-2 border-primary pl-4 pb-4 last:pb-0 p-3 rounded-r-lg transition-all duration-300 hover:bg-muted/50 cursor-default ${idx === 0 ? 'bg-muted/30' : ''
+                            }`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-semibold">{version.version}</span>
@@ -638,20 +636,19 @@ const ModelDetails = () => {
             </Tabs>
           </div>
 
-          <div className={`lg:col-span-1 space-y-6 transition-all duration-1000 delay-400 ${
-            isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0'
-          }`}>
+          <div className={`lg:col-span-1 space-y-6 transition-all duration-1000 delay-400 ${isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0'
+            }`}>
             {/* Trust Score Card */}
             <Card className="hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
                 <CardTitle>Security & Trust</CardTitle>
               </CardHeader>
               <CardContent>
-                <TrustScoreBadge 
-                  modelId={model.id} 
-                  modelName={model.name} 
-                  cid={model.cid} 
-                  showDetails 
+                <TrustScoreBadge
+                  modelId={model.id}
+                  modelName={model.name}
+                  cid={model.cid}
+                  showDetails
                 />
               </CardContent>
             </Card>
@@ -703,7 +700,7 @@ const ModelDetails = () => {
                 <div className="space-y-2">
                   <div className="font-mono text-sm break-all p-2 rounded bg-muted/50 hover:bg-muted/80 transition-colors cursor-pointer">{model.uploader}</div>
                   <Button variant="outline" size="sm" className="w-full transition-all duration-300 hover:shadow-md" asChild>
-                    <a 
+                    <a
                       href={`https://sepolia.etherscan.io/address/${model.uploader}`}
                       target="_blank"
                       rel="noopener noreferrer"

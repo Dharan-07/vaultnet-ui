@@ -52,10 +52,10 @@ export const WalletButton = () => {
     try {
       // Connect via Web3
       const addr = await web3ConnectWallet();
-      
+
       // Save to Firestore
       await connectWallet(addr);
-      
+
       const bal = await getBalance();
       setBalance(bal);
 
@@ -104,10 +104,11 @@ export const WalletButton = () => {
       <Button
         onClick={handleConnect}
         disabled={isConnecting}
-        className="gap-2"
+        className="gap-1 md:gap-2 text-xs md:text-sm"
+        size="sm"
       >
-        <Wallet className="w-4 h-4" />
-        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+        <Wallet className="w-3 md:w-4 h-3 md:h-4" />
+        <span className="hidden sm:inline">{isConnecting ? 'Connecting...' : 'Connect'}</span>
       </Button>
     );
   }
@@ -115,29 +116,30 @@ export const WalletButton = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Wallet className="w-4 h-4" />
-          <span className="hidden sm:inline">{formatAddress(user.walletAddress)}</span>
+        <Button variant="outline" className="gap-1 md:gap-2 text-xs md:text-sm" size="sm">
+          <Wallet className="w-3 md:w-4 h-3 md:h-4" />
+          <span className="hidden md:inline">{formatAddress(user.walletAddress)}</span>
+          <span className="md:hidden">{user.walletAddress.slice(0, 4)}...</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>My Wallet</DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="w-48 md:w-56">
+        <DropdownMenuLabel className="text-xs md:text-sm">My Wallet</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <div className="px-2 py-1.5 text-sm">
-          <div className="text-muted-foreground">Address</div>
-          <div className="font-mono text-xs">{user.walletAddress}</div>
+        <div className="px-2 py-1.5 text-xs md:text-sm">
+          <div className="text-muted-foreground text-xs">Address</div>
+          <div className="font-mono text-xs break-all">{user.walletAddress}</div>
         </div>
-        <div className="px-2 py-1.5 text-sm">
-          <div className="text-muted-foreground">Balance</div>
+        <div className="px-2 py-1.5 text-xs md:text-sm">
+          <div className="text-muted-foreground text-xs">Balance</div>
           <div className="font-semibold">{formatBalance(balance)} ETH</div>
         </div>
-        <div className="px-2 py-1.5 text-sm">
-          <div className="text-muted-foreground">Network</div>
+        <div className="px-2 py-1.5 text-xs md:text-sm">
+          <div className="text-muted-foreground text-xs">Network</div>
           <div className="font-medium">Sepolia</div>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleDisconnect} className="gap-2 cursor-pointer">
-          <LogOut className="w-4 h-4" />
+        <DropdownMenuItem onClick={handleDisconnect} className="gap-2 cursor-pointer text-xs md:text-sm">
+          <LogOut className="w-3 md:w-4 h-3 md:h-4" />
           Disconnect
         </DropdownMenuItem>
       </DropdownMenuContent>

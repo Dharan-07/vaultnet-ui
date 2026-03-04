@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  UserPlus, 
-  Wallet, 
-  Upload, 
-  ShoppingCart, 
-  Shield, 
+import {
+  UserPlus,
+  Wallet,
+  Upload,
+  ShoppingCart,
+  Shield,
   HelpCircle,
   ChevronRight
 } from 'lucide-react';
@@ -101,7 +101,7 @@ const InstructionsSection = () => {
 
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
-    
+
     itemRefs.current.forEach((ref, index) => {
       if (ref) {
         const observer = new IntersectionObserver(
@@ -126,56 +126,55 @@ const InstructionsSection = () => {
   }, []);
 
   return (
-    <section id="instructions-section" className="min-h-screen relative py-20 px-6 gradient-primary">
+    <section id="instructions-section" className="min-h-screen relative py-12 md:py-20 px-3 md:px-6 gradient-primary">
       {/* Background overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/20 z-0" />
-      
+
       <div className="max-w-5xl mx-auto relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 border border-white/30 mb-4">
-            <HelpCircle className="w-4 h-4 text-white" />
-            <span className="text-sm font-medium text-white">User Guide</span>
+        <div className="text-center mb-8 md:mb-12">
+          <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-white/20 border border-white/30 mb-3 md:mb-4">
+            <HelpCircle className="w-3 md:w-4 h-3 md:h-4 text-white" />
+            <span className="text-xs md:text-sm font-medium text-white">User Guide</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-3 md:mb-4">
             How to Use <span className="text-white/90">VaultNet</span>
           </h2>
-          <p className="text-lg text-white/80 max-w-xl mx-auto">
+          <p className="text-sm md:text-lg text-white/80 max-w-xl mx-auto">
             Quick guide to get started with our decentralized AI platform
           </p>
         </div>
 
         {/* Instructions Grid */}
-        <ScrollArea className="h-[60vh] pr-4 smooth-scroll [&_[data-radix-scroll-area-viewport]]:scroll-smooth [&_[data-radix-scroll-area-viewport]]:!overflow-y-auto">
-          <div className="space-y-4 mb-12">
+        <ScrollArea className="h-auto md:h-[60vh] pr-3 md:pr-4 smooth-scroll [&_[data-radix-scroll-area-viewport]]:scroll-smooth [&_[data-radix-scroll-area-viewport]]:!overflow-y-auto">
+          <div className="space-y-2 md:space-y-4 mb-8 md:mb-12">
             {instructions.map((instruction, idx) => {
               const Icon = instruction.icon;
               return (
                 <div
                   key={idx}
                   ref={(el) => (itemRefs.current[idx] = el)}
-                  className={`group rounded-2xl backdrop-blur-md bg-white/10 border border-white/20 hover:border-white/40 transition-all duration-500 hover:shadow-lg hover:shadow-white/10 overflow-hidden ${
-                    visibleItems.has(idx)
+                  className={`group rounded-xl md:rounded-2xl backdrop-blur-md bg-white/10 border border-white/20 hover:border-white/40 transition-all duration-500 hover:shadow-lg hover:shadow-white/10 overflow-hidden ${visibleItems.has(idx)
                       ? 'opacity-100 translate-x-0'
                       : 'opacity-0 -translate-x-8'
-                  }`}
-                  style={{ 
+                    }`}
+                  style={{
                     transitionDelay: `${idx * 60}ms`,
                     transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
                   }}
                 >
                   <Accordion type="single" collapsible>
                     <AccordionItem value={`item-${idx}`} className="border-none">
-                      <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                        <div className="flex items-center gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                            <Icon className="w-6 h-6 text-white" />
+                      <AccordionTrigger className="px-3 md:px-6 py-3 md:py-4 hover:no-underline">
+                        <div className="flex items-center gap-3 md:gap-4">
+                          <div className="flex-shrink-0 w-10 md:w-12 h-10 md:h-12 rounded-lg md:rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                            <Icon className="w-5 md:w-6 h-5 md:h-6 text-white" />
                           </div>
                           <div className="text-left">
-                            <h3 className="text-lg font-semibold text-white group-hover:text-white/90 transition-colors">
+                            <h3 className="text-base md:text-lg font-semibold text-white group-hover:text-white/90 transition-colors">
                               {instruction.title}
                             </h3>
-                            <p className="text-sm text-white/70">
+                            <p className="text-xs md:text-sm text-white/70">
                               {instruction.description}
                             </p>
                           </div>

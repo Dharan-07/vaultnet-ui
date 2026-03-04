@@ -25,7 +25,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const walletAddress = getWalletAddress();
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [myUploadedModels, setMyUploadedModels] = useState<EnrichedModel[]>([]);
   const [allModels, setAllModels] = useState<EnrichedModel[]>([]);
@@ -38,7 +38,7 @@ const Dashboard = () => {
     setIsLoading(true);
     try {
       const models = await getAllModels();
-      
+
       // Enrich models with IPFS metadata
       const enrichedModels = await Promise.all(
         models.map(async (model) => {
@@ -46,9 +46,9 @@ const Dashboard = () => {
           return { ...model, metadata };
         })
       );
-      
+
       setAllModels(enrichedModels);
-      
+
       // Filter models uploaded by current wallet
       if (walletAddress) {
         const myModels = enrichedModels.filter(
@@ -74,11 +74,11 @@ const Dashboard = () => {
 
   const handleUpdateVersion = async () => {
     if (!selectedModelId || !newCid) return;
-    
+
     setIsUpdating(true);
     try {
       const result = await updateModel(selectedModelId, newCid);
-      
+
       if (result.success) {
         toast({
           title: 'Model Updated',
@@ -103,14 +103,14 @@ const Dashboard = () => {
 
   const handleDownload = async (model: EnrichedModel) => {
     try {
-      const filename = model.metadata?.name 
+      const filename = model.metadata?.name
         ? `${model.metadata.name.replace(/\s+/g, '_')}.zip`
         : `model_${model.id}.zip`;
-      
+
       // If metadata has fileCid, download the actual file
       const cidToDownload = model.metadata?.fileCid || model.cid;
       await downloadFromIPFS(cidToDownload, filename);
-      
+
       toast({
         title: 'Download Started',
         description: `Downloading ${filename}`,
@@ -156,31 +156,31 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8 flex-1">
+      <div className="w-full px-3 md:px-4 py-6 md:py-8 flex-1">
         {/* User Profile Header */}
-        <Card className="mb-8 overflow-hidden">
-          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16 border-4 border-background shadow-lg ring-2 ring-primary/20 transition-all duration-300 hover:ring-primary/40 hover:scale-105">
-                  <AvatarImage 
-                    src={user?.profilePhotoUrl} 
-                    alt={user?.name || 'Profile'} 
+        <Card className="mb-6 md:mb-8 overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                <Avatar className="w-12 md:w-16 h-12 md:h-16 border-4 border-background shadow-lg ring-2 ring-primary/20 transition-all duration-300 hover:ring-primary/40 hover:scale-105 flex-shrink-0">
+                  <AvatarImage
+                    src={user?.profilePhotoUrl}
+                    alt={user?.name || 'Profile'}
                   />
-                  <AvatarFallback className="text-xl bg-primary/10 text-primary">
-                    {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : <User className="w-8 h-8" />}
+                  <AvatarFallback className="text-base md:text-xl bg-primary/10 text-primary">
+                    {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : <User className="w-6 md:w-8 h-6 md:h-8" />}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <h1 className="text-2xl font-bold">{user?.name || 'Anonymous User'}</h1>
-                  <p className="text-muted-foreground text-sm">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl md:text-2xl font-bold truncate">{user?.name || 'Anonymous User'}</h1>
+                  <p className="text-muted-foreground text-xs md:text-sm truncate">
                     {user?.email} • {formatAddress(walletAddress)}
                   </p>
                   {user?.bio && (
-                    <p className="text-sm text-muted-foreground mt-1 italic max-w-md">"{user.bio}"</p>
+                    <p className="text-xs md:text-sm text-muted-foreground mt-1 italic line-clamp-2">{user.bio}</p>
                   )}
                   {(user?.location || user?.website) && (
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 md:gap-4 mt-2 text-xs md:text-sm text-muted-foreground flex-wrap">
                       {user?.location && (
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
@@ -188,7 +188,7 @@ const Dashboard = () => {
                         </span>
                       )}
                       {user?.website && (
-                        <a 
+                        <a
                           href={user.website.startsWith('http') ? user.website : `https://${user.website}`}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -201,15 +201,15 @@ const Dashboard = () => {
                     </div>
                   )}
                   {(user?.twitter || user?.github || user?.linkedin) && (
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-1 md:gap-2 mt-2">
                       {user?.twitter && (
                         <a
                           href={`https://twitter.com/${user.twitter}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
+                          className="p-1 md:p-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
                         >
-                          <Twitter className="w-4 h-4" />
+                          <Twitter className="w-3 md:w-4 h-3 md:h-4" />
                         </a>
                       )}
                       {user?.github && (
@@ -217,9 +217,9 @@ const Dashboard = () => {
                           href={`https://github.com/${user.github}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
+                          className="p-1 md:p-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
                         >
-                          <Github className="w-4 h-4" />
+                          <Github className="w-3 md:w-4 h-3 md:h-4" />
                         </a>
                       )}
                       {user?.linkedin && (
@@ -227,66 +227,67 @@ const Dashboard = () => {
                           href={`https://linkedin.com/in/${user.linkedin}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
+                          className="p-1 md:p-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
                         >
-                          <Linkedin className="w-4 h-4" />
+                          <Linkedin className="w-3 md:w-4 h-3 md:h-4" />
                         </a>
                       )}
                     </div>
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap md:flex-nowrap">
                 <EditProfileDialog
                   trigger={
-                    <Button variant="outline" size="sm" className="gap-2 hover:bg-primary/10 transition-colors">
-                      <Edit2 className="w-4 h-4" />
-                      Edit Profile
+                    <Button variant="outline" size="sm" className="gap-1 md:gap-2 hover:bg-primary/10 transition-colors text-xs md:text-sm">
+                      <Edit2 className="w-3 md:w-4 h-3 md:h-4" />
+                      <span className="hidden sm:inline">Edit Profile</span>
+                      <span className="sm:hidden">Edit</span>
                     </Button>
                   }
                 />
-                <Button variant="outline" onClick={fetchModels} disabled={isLoading}>
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh
+                <Button variant="outline" onClick={fetchModels} disabled={isLoading} size="sm" className="text-xs md:text-sm gap-1 md:gap-2">
+                  <RefreshCw className={`w-3 md:w-4 h-3 md:h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Refresh</span>
                 </Button>
               </div>
             </div>
           </div>
         </Card>
 
-        <h2 className="text-2xl font-bold mb-4">My Dashboard</h2>
-        
+        <h2 className="text-xl md:text-2xl font-bold mb-4">My Dashboard</h2>
+
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">My Uploaded Models</CardTitle>
-              <Upload className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs md:text-sm font-medium">My Uploaded Models</CardTitle>
+              <Upload className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{myUploadedModels.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{myUploadedModels.length}</div>
               <p className="text-xs text-muted-foreground">On-chain models you uploaded</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total On-Chain</CardTitle>
-              <Download className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs md:text-sm font-medium">Total On-Chain</CardTitle>
+              <Download className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{allModels.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{allModels.length}</div>
               <p className="text-xs text-muted-foreground">Models on the blockchain</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="sm:col-span-2 lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-              <span className="text-muted-foreground font-mono text-sm">ETH</span>
+              <CardTitle className="text-xs md:text-sm font-medium">Total Value</CardTitle>
+              <span className="text-muted-foreground font-mono text-xs">ETH</span>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl md:text-2xl font-bold">
                 {myUploadedModels.reduce((sum, m) => sum + parseFloat(m.price || '0'), 0).toFixed(3)}
               </div>
               <p className="text-xs text-muted-foreground">Combined price of your models</p>
@@ -295,38 +296,38 @@ const Dashboard = () => {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-muted-foreground">Loading on-chain models...</span>
+          <div className="flex items-center justify-center py-8 md:py-12">
+            <Loader2 className="w-6 md:w-8 h-6 md:h-8 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-xs md:text-sm text-muted-foreground">Loading on-chain models...</span>
           </div>
         ) : (
           <Tabs defaultValue="uploaded" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
-              <TabsTrigger value="uploaded">My Uploaded Models</TabsTrigger>
-              <TabsTrigger value="all">All On-Chain Models</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 w-full md:w-fit">
+              <TabsTrigger value="uploaded" className="text-xs md:text-sm">My Uploaded Models</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs md:text-sm">All On-Chain Models</TabsTrigger>
             </TabsList>
 
             {/* Uploaded Models */}
-            <TabsContent value="uploaded" className="mt-6">
+            <TabsContent value="uploaded" className="mt-4 md:mt-6">
               {myUploadedModels.length > 0 ? (
-                <div className="grid gap-6">
+                <div className="grid gap-4 md:gap-6">
                   {myUploadedModels.map(model => (
                     <Card key={model.id}>
                       <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <CardTitle>{model.metadata?.name || `Model #${model.id}`}</CardTitle>
-                              <Badge variant="secondary">{model.metadata?.category || 'Uncategorized'}</Badge>
-                              <Badge variant="outline">v{model.version}</Badge>
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <CardTitle className="text-base md:text-lg truncate">{model.metadata?.name || `Model #${model.id}`}</CardTitle>
+                              <Badge variant="secondary" className="text-xs">{model.metadata?.category || 'Uncategorized'}</Badge>
+                              <Badge variant="outline" className="text-xs">v{model.version}</Badge>
                             </div>
-                            <CardDescription>
+                            <CardDescription className="text-xs md:text-sm line-clamp-2">
                               {model.metadata?.description || 'No description available'}
                             </CardDescription>
                           </div>
-                          <div className="text-right">
-                            <div className="text-xl font-bold text-primary">{model.price} ETH</div>
-                            <div className="text-sm text-muted-foreground">
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-lg md:text-xl font-bold text-primary">{model.price} ETH</div>
+                            <div className="text-xs text-muted-foreground">
                               {model.metadata?.fileSize || 'Unknown size'}
                             </div>
                           </div>
@@ -335,15 +336,15 @@ const Dashboard = () => {
                       <CardContent>
                         <div className="flex items-center gap-2 flex-wrap">
                           <Link to={`/model/${model.id}`}>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="text-xs">
                               View Details
                             </Button>
                           </Link>
                           <Dialog open={updateDialogOpen && selectedModelId === model.id} onOpenChange={setUpdateDialogOpen}>
                             <DialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 className="gap-2"
                                 onClick={() => setSelectedModelId(model.id)}
                               >
@@ -374,7 +375,7 @@ const Dashboard = () => {
                                     onChange={(e) => setNewCid(e.target.value)}
                                   />
                                 </div>
-                                <Button 
+                                <Button
                                   onClick={handleUpdateVersion}
                                   disabled={!newCid || isUpdating}
                                   className="w-full"
@@ -391,18 +392,18 @@ const Dashboard = () => {
                               </div>
                             </DialogContent>
                           </Dialog>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="gap-2"
                             onClick={() => handleDownload(model)}
                           >
                             <Download className="w-4 h-4" />
                             Download
                           </Button>
-                          <a 
-                            href={getIPFSUrl(model.cid)} 
-                            target="_blank" 
+                          <a
+                            href={getIPFSUrl(model.cid)}
+                            target="_blank"
                             rel="noopener noreferrer"
                           >
                             <Button variant="ghost" size="sm" className="gap-2">
@@ -475,7 +476,7 @@ const Dashboard = () => {
                         <p className="text-sm text-muted-foreground mb-4">
                           {model.metadata?.description || 'No description available'}
                         </p>
-                        
+
                         <div className="flex items-center gap-2">
                           <Link to={`/model/${model.id}`}>
                             <Button variant="outline" size="sm">

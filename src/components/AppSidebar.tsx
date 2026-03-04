@@ -2,6 +2,7 @@ import { Upload, Search, LayoutDashboard, Database, Box } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sidebar,
   SidebarContent,
@@ -30,11 +31,12 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const isMobile = useIsMobile();
 
   if (!isAuthenticated) return null;
 
   return (
-    <Sidebar collapsible="icon" className="border-r-3 border-foreground">
+    <Sidebar collapsible="icon" className="border-r-3 border-foreground hidden md:flex">
       <SidebarHeader className="border-b-3 border-foreground p-4">
         <Link to="/" className="flex items-center gap-2">
           <img src={Logo} alt="VaultNet" className="h-8 w-8" />
