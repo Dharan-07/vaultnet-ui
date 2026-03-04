@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { LogOut, User, LayoutDashboard, PanelLeft, Upload, Search, Database, Box } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { LogOut, User, LayoutDashboard, PanelLeft, Upload, Search, Database, Box, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { WalletButton } from './WalletButton';
 import Logo from '@/assets/vn_logo.png';
@@ -23,17 +23,23 @@ const navItems = [
 
 export const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="border-b-3 border-foreground bg-card sticky top-0 z-50 shadow-[0_4px_0px_hsl(var(--foreground))]">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2 group">
-            <img src={Logo} alt="VaultNet" className="h-8 w-8" />
-            <span className="font-bold text-xl font-mono uppercase tracking-tight group-hover:text-primary transition-colors duration-150">
-              VaultNet
-            </span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <Link to="/" className="flex items-center gap-2 group">
+              <img src={Logo} alt="VaultNet" className="h-8 w-8" />
+              <span className="font-bold text-xl font-mono uppercase tracking-tight group-hover:text-primary transition-colors duration-150">
+                VaultNet
+              </span>
+            </Link>
+          </div>
 
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
