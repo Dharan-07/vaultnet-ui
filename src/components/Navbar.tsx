@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Search, Upload, LayoutDashboard, LogOut, User } from 'lucide-react';
+import { LogOut, User, LayoutDashboard, PanelLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { WalletButton } from './WalletButton';
 import Logo from '@/assets/vn_logo.png';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSidebar } from './ui/sidebar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+
+const SidebarToggle = () => {
+  try {
+    const { toggleSidebar } = useSidebar();
+    return (
+      <Button variant="outline" size="icon" onClick={toggleSidebar}>
+        <PanelLeft className="w-5 h-5" />
+      </Button>
+    );
+  } catch {
+    return null;
+  }
+};
 
 export const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
@@ -27,50 +41,10 @@ export const Navbar = () => {
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-1">
-            <Link to="/">
-              <Button variant="ghost" className="gap-2">
-                <Search className="w-4 h-4" />
-                Explore
-              </Button>
-            </Link>
-            {isAuthenticated && (
-              <>
-                <Link to="/marketplace">
-                  <Button variant="ghost" className="gap-2">
-                    Models
-                  </Button>
-                </Link>
-                <Link to="/datasets">
-                  <Button variant="ghost" className="gap-2">
-                    Datasets
-                  </Button>
-                </Link>
-                <Link to="/upload">
-                  <Button variant="ghost" className="gap-2">
-                    <Upload className="w-4 h-4" />
-                    Upload
-                  </Button>
-                </Link>
-                <Link to="/search-users">
-                  <Button variant="ghost" className="gap-2">
-                    <Search className="w-4 h-4" />
-                    Find Users
-                  </Button>
-                </Link>
-                <Link to="/dashboard">
-                  <Button variant="ghost" className="gap-2">
-                    <LayoutDashboard className="w-4 h-4" />
-                    Dashboard
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <>
+                <SidebarToggle />
                 <WalletButton />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppLayout } from "@/components/AppLayout";
 import Welcome from "./pages/Welcome";
 import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
@@ -29,23 +30,24 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Welcome />} />
-            <Route path="/home" element={<Index />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
-            <Route path="/model/:id" element={<ProtectedRoute><ModelDetails /></ProtectedRoute>} />
-            <Route path="/datasets" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
-            <Route path="/upload-dataset" element={<ProtectedRoute><UploadDataset /></ProtectedRoute>} />
-            <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/search-users" element={<ProtectedRoute><UserSearch /></ProtectedRoute>} />
-            <Route path="/user/:uid" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<Welcome />} />
+              <Route path="/home" element={<Index />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
+              <Route path="/model/:id" element={<ProtectedRoute><ModelDetails /></ProtectedRoute>} />
+              <Route path="/datasets" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
+              <Route path="/upload-dataset" element={<ProtectedRoute><UploadDataset /></ProtectedRoute>} />
+              <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/search-users" element={<ProtectedRoute><UserSearch /></ProtectedRoute>} />
+              <Route path="/user/:uid" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppLayout>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
