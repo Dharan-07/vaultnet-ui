@@ -49,7 +49,6 @@ export default function SignIn() {
       setError(error.message || "Failed to sign in with Google");
       setIsGoogleLoading(false);
     }
-    // If successful, the page will redirect
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,11 +108,11 @@ export default function SignIn() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
       <Navbar />
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
+      <main className="flex-1 flex items-center justify-center px-3 md:px-4 py-8 md:py-12">
         <div className="w-full max-w-[800px]">
-          <Card className="w-full border-primary/20 shadow-2xl overflow-hidden flex flex-row gap-0 bg-white dark:bg-slate-950">
-            {/* Left Panel - Illustration */}
-            <div className="w-1/2 bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+          <Card className="w-full border-primary/20 shadow-2xl overflow-hidden flex flex-col md:flex-row gap-0 bg-card">
+            {/* Left Panel - Illustration (hidden on mobile) */}
+            <div className="hidden md:flex w-1/2 bg-muted items-center justify-center overflow-hidden">
               <img
                 src={authBackground}
                 alt="Crypto/NFT Illustration"
@@ -122,13 +121,13 @@ export default function SignIn() {
             </div>
 
             {/* Right Panel - Sign In Form */}
-            <div className="w-1/2 bg-white dark:bg-slate-950 flex flex-col p-6">
+            <div className="w-full md:w-1/2 flex flex-col p-4 md:p-6">
               <CardHeader className="space-y-1 p-0 mb-4">
                 <div className="flex justify-center mb-2">
-                  <img src={Logo} alt="VaultNet" className="h-12 w-12" />
+                  <img src={Logo} alt="VaultNet" className="h-10 w-10 md:h-12 md:w-12" />
                 </div>
-                <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
-                <CardDescription className="text-center text-sm">
+                <CardTitle className="text-xl md:text-2xl font-bold text-center">Sign In</CardTitle>
+                <CardDescription className="text-center text-xs md:text-sm">
                   Unlock your world.
                 </CardDescription>
               </CardHeader>
@@ -201,7 +200,7 @@ export default function SignIn() {
                       <span className="w-full border-t border-border" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white dark:bg-slate-950 px-2 text-muted-foreground text-xs">Or</span>
+                      <span className="bg-card px-2 text-muted-foreground text-xs">Or</span>
                     </div>
                   </div>
 
@@ -231,7 +230,7 @@ export default function SignIn() {
       <Footer />
 
       <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-        <DialogContent>
+        <DialogContent className="mx-4 max-w-sm md:max-w-md">
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>
@@ -250,7 +249,7 @@ export default function SignIn() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setShowResetDialog(false)}>
               Cancel
             </Button>

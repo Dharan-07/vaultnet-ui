@@ -222,7 +222,7 @@ const Welcome = () => {
         {/* Animated gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 animate-pulse z-20" style={{ animationDuration: '4s' }} />
 
-        <div className="relative z-30 text-center px-6 max-w-3xl mx-auto transform transition-all duration-1000 hover:scale-[1.02]">
+        <div className="relative z-30 text-center px-4 md:px-6 max-w-3xl mx-auto transform transition-all duration-1000 hover:scale-[1.02]">
           {/* Animated Logo/Icon */}
           
           {/* Website Name */}
@@ -231,14 +231,14 @@ const Welcome = () => {
               isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
             }`}
           >
-            <h1 className="text-5xl md:text-7xl font-bold text-foreground/90 tracking-tight cursor-pointer drop-shadow-lg hover:text-foreground transition-colors duration-300">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-foreground/90 tracking-tight cursor-pointer drop-shadow-lg hover:text-foreground transition-colors duration-300">
               VaultNet
             </h1>
           </div>
           
           {/* Typing Effect Tagline */}
           <p 
-            className={`text-lg md:text-xl text-foreground/70 mb-4 leading-relaxed transition-all duration-1000 delay-200 h-8 ${
+            className={`text-sm sm:text-lg md:text-xl text-foreground/70 mb-4 leading-relaxed transition-all duration-1000 delay-200 h-6 sm:h-8 ${
               isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
             }`}
           >
@@ -250,7 +250,7 @@ const Welcome = () => {
             />
           </p>
           <p 
-            className={`text-base text-foreground/80 mb-12 max-w-xl mx-auto transition-all duration-1000 delay-300 ${
+            className={`text-sm md:text-base text-foreground/80 mb-8 md:mb-12 max-w-xl mx-auto transition-all duration-1000 delay-300 ${
               isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
             }`}
           >
@@ -318,7 +318,7 @@ const Welcome = () => {
       </div>
 
       {/* About Us Section */}
-      <section id="about-section" className="min-h-screen relative py-20 px-6">
+      <section id="about-section" className="min-h-screen relative py-10 md:py-20 px-3 md:px-6">
         {/* Spline 3D Background */}
         <div className="absolute inset-0 z-0">
           <WebGLErrorBoundary fallback={<div className="w-full h-full bg-gradient-to-br from-primary/20 to-background" />}>
@@ -333,8 +333,8 @@ const Welcome = () => {
 
         <div className="max-w-6xl mx-auto relative z-20">
           {/* Section Header */}
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <div className="text-center mb-8 md:mb-16">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
               About <span className="text-primary">VaultNet</span>
             </h2>
             <p className="text-lg text-foreground/60 max-w-2xl mx-auto">

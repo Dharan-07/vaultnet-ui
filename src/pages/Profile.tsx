@@ -189,16 +189,16 @@ const Profile = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8 flex-1">
+      <div className="w-full px-3 md:px-4 py-6 md:py-8 flex-1">
         <div className="max-w-5xl mx-auto">
-          <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-            <h1 className="text-4xl font-bold mb-2">My Profile</h1>
-            <p className="text-muted-foreground">
+          <div className={`mb-4 md:mb-8 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+            <h1 className="text-2xl md:text-4xl font-bold mb-2">My Profile</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
               Manage your account, wallet, and models
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="grid md:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-8">
             {/* Profile Card */}
             <Card className={`md:col-span-2 transition-all duration-1000 delay-100 hover:shadow-lg hover:-translate-y-1 cursor-default ${
               isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'

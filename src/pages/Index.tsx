@@ -24,13 +24,13 @@ const Index = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="bg-primary text-primary-foreground py-20 border-b-3 border-foreground">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h1 className="text-5xl md:text-6xl font-bold leading-tight font-mono uppercase">
+      <section className="bg-primary text-primary-foreground py-10 md:py-20 border-b-3 border-foreground">
+        <div className="w-full px-3 md:px-4">
+          <div className="max-w-4xl mx-auto text-center space-y-4 md:space-y-8">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight font-mono uppercase">
               Decentralized AI Model Repository
             </h1>
-            <p className="text-xl md:text-2xl opacity-90">
+            <p className="text-base md:text-xl lg:text-2xl opacity-90">
               Discover, share, and monetize AI models on the blockchain
             </p>
             
@@ -56,9 +56,9 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-secondary/30 border-b-3 border-foreground">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8">
+      <section className="py-8 md:py-16 bg-secondary/30 border-b-3 border-foreground">
+        <div className="w-full px-3 md:px-4">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
             {[
               { icon: Shield, title: "Decentralized Storage", desc: "Models stored securely on IPFS with blockchain verification" },
               { icon: Zap, title: "Smart Contracts", desc: "Automated payments and access control via Ethereum" },
@@ -77,10 +77,10 @@ const Index = () => {
       </section>
 
       {/* Featured Models */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold font-mono uppercase">Featured Models</h2>
+      <section className="py-8 md:py-16">
+        <div className="w-full px-3 md:px-4">
+          <div className="flex items-center justify-between mb-4 md:mb-8 gap-2">
+            <h2 className="text-xl md:text-3xl font-bold font-mono uppercase">Featured Models</h2>
             <Link to="/marketplace">
               <Button variant="outline" className="gap-2">
                 View All
@@ -89,7 +89,7 @@ const Index = () => {
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {featuredModels.slice(0, 3).map(model => (
               <ModelCard key={model.id} model={model} />
             ))}
@@ -98,10 +98,10 @@ const Index = () => {
       </section>
 
       {/* Trending Models */}
-      <section className="py-16 bg-secondary/30 border-y-3 border-foreground">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold font-mono uppercase">Trending Models</h2>
+      <section className="py-8 md:py-16 bg-secondary/30 border-y-3 border-foreground">
+        <div className="w-full px-3 md:px-4">
+          <div className="flex items-center justify-between mb-4 md:mb-8 gap-2">
+            <h2 className="text-xl md:text-3xl font-bold font-mono uppercase">Trending Models</h2>
             <Link to="/marketplace">
               <Button variant="outline" className="gap-2">
                 View All
@@ -110,7 +110,7 @@ const Index = () => {
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {trendingModels.map(model => (
               <ModelCard key={model.id} model={model} />
             ))}
@@ -119,10 +119,10 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-secondary border-b-3 border-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4 font-mono uppercase">Ready to get started?</h2>
-          <p className="text-xl text-secondary-foreground/80 mb-8">
+      <section className="py-10 md:py-20 bg-secondary border-b-3 border-foreground">
+        <div className="w-full px-3 md:px-4 text-center">
+          <h2 className="text-2xl md:text-4xl font-bold mb-3 md:mb-4 font-mono uppercase">Ready to get started?</h2>
+          <p className="text-base md:text-xl text-secondary-foreground/80 mb-6 md:mb-8">
             Join the decentralized AI revolution today
           </p>
           <div className="flex flex-wrap justify-center gap-4">

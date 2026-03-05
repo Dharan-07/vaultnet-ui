@@ -121,22 +121,22 @@ export default function UserSearch() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8 flex-1">
+      <div className="w-full px-3 md:px-4 py-6 md:py-8 flex-1">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">Find Users</h1>
-          <p className="text-muted-foreground mb-8">
+          <h1 className="text-2xl md:text-4xl font-bold mb-2">Find Users</h1>
+          <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-8">
             Search by User ID, profile name, or wallet address
           </p>
 
           <form onSubmit={handleSearch} className="mb-8">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 w-4 md:w-5 h-4 md:h-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Enter UID, name, or wallet address (0x...)..."
+                placeholder="Enter UID, name, or wallet address..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-24 h-12 text-base text-foreground"
+                className="pl-10 md:pl-12 pr-20 md:pr-24 h-10 md:h-12 text-sm md:text-base text-foreground"
               />
               <Button
                 type="submit"
@@ -169,8 +169,8 @@ export default function UserSearch() {
               <p className="text-sm text-muted-foreground">{results.length} result{results.length !== 1 ? 's' : ''} found</p>
               {results.map((user) => (
                 <Card key={user.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="flex items-center gap-4 py-4">
-                    <Avatar className="w-14 h-14 border-2 border-background shadow ring-1 ring-primary/20">
+                    <CardContent className="flex items-center gap-3 md:gap-4 py-3 md:py-4">
+                     <Avatar className="w-10 h-10 md:w-14 md:h-14 border-2 border-background shadow ring-1 ring-primary/20 flex-shrink-0">
                       <AvatarImage src={user.profilePhotoUrl} alt={user.name} />
                       <AvatarFallback className="bg-primary/10 text-primary">
                         {user.name ? getInitials(user.name) : <User className="w-6 h-6" />}
@@ -178,7 +178,7 @@ export default function UserSearch() {
                     </Avatar>
 
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg truncate">{user.name || 'Anonymous'}</h3>
+                      <h3 className="font-semibold text-sm md:text-lg truncate">{user.name || 'Anonymous'}</h3>
                       {user.bio && (
                         <p className="text-sm text-muted-foreground truncate">{user.bio}</p>
                       )}
