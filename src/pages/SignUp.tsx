@@ -108,23 +108,23 @@ export default function SignUp() {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <main className="flex-1 flex items-center justify-center px-3 md:px-4 py-8 md:py-12">
           <Card className="w-full max-w-md border-primary/20 shadow-2xl bg-card/80 backdrop-blur-sm">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Mail className="h-8 w-8 text-primary" />
+              <div className="mx-auto mb-4 h-14 w-14 md:h-16 md:w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="h-7 w-7 md:h-8 md:w-8 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-bold">Check Your Email</CardTitle>
               <CardDescription>
                 We've sent a verification link to <strong>{formData.email}</strong>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-center text-muted-foreground">
+              <p className="text-center text-sm text-muted-foreground">
                 Click the link in the email to verify your account and get started with VaultNet.
               </p>
               <Alert>
-                <AlertDescription>
+                <AlertDescription className="text-xs md:text-sm">
                   Didn't receive the email? Check your spam folder or try signing up again.
                 </AlertDescription>
               </Alert>
@@ -147,11 +147,11 @@ export default function SignUp() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/95">
       <Navbar />
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
+      <main className="flex-1 flex items-center justify-center px-3 md:px-4 py-8 md:py-12">
         <div className="w-full max-w-[800px]">
-          <Card className="w-full border-primary/20 shadow-2xl overflow-hidden flex flex-row gap-0 bg-white dark:bg-slate-950">
-            {/* Left Panel - Illustration */}
-            <div className="w-1/2 bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+          <Card className="w-full border-primary/20 shadow-2xl overflow-hidden flex flex-col md:flex-row gap-0 bg-card">
+            {/* Left Panel - Illustration (hidden on mobile) */}
+            <div className="hidden md:flex w-1/2 bg-muted items-center justify-center overflow-hidden">
               <img
                 src={authBackground}
                 alt="Crypto/NFT Illustration"
@@ -160,13 +160,13 @@ export default function SignUp() {
             </div>
 
             {/* Right Panel - Sign Up Form */}
-            <div className="w-1/2 bg-white dark:bg-slate-950 flex flex-col p-6 overflow-y-auto">
+            <div className="w-full md:w-1/2 flex flex-col p-4 md:p-6 overflow-y-auto max-h-[80vh] md:max-h-none">
               <CardHeader className="space-y-1 p-0 mb-4">
                 <div className="flex justify-center mb-2">
-                  <img src={Logo} alt="VaultNet" className="h-12 w-12" />
+                  <img src={Logo} alt="VaultNet" className="h-10 w-10 md:h-12 md:w-12" />
                 </div>
-                <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
-                <CardDescription className="text-center text-sm">
+                <CardTitle className="text-xl md:text-2xl font-bold text-center">Create Account</CardTitle>
+                <CardDescription className="text-center text-xs md:text-sm">
                   Join the AI marketplace
                 </CardDescription>
               </CardHeader>
@@ -229,7 +229,7 @@ export default function SignUp() {
                       </button>
                     </div>
                     {formData.password && (
-                      <div className="mt-2 space-y-0.5 p-2 bg-muted/50 rounded-md">
+                      <div className="mt-2 space-y-0.5 p-2 bg-muted/50 rounded-md text-xs">
                         <PasswordRequirement met={passwordRequirements.minLength} text="At least 8 characters" />
                         <PasswordRequirement met={passwordRequirements.hasUppercase} text="One uppercase" />
                         <PasswordRequirement met={passwordRequirements.hasLowercase} text="One lowercase" />
