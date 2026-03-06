@@ -1,29 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { Redis } from "https://esm.sh/@upstash/redis@1.28.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-// Rate limiting configuration
-const RATE_LIMIT_REQUESTS = 10; // requests per window
-const RATE_LIMIT_WINDOW = 60; // seconds
-
-async function checkRateLimit(redis: Redis, identifier: string): Promise<{ allowed: boolean; remaining: number }> {
-  const key = `rate_limit:pinata-upload:${identifier}`;
-  const current = await redis.incr(key);
-  
-  if (current === 1) {
-    await redis.expire(key, RATE_LIMIT_WINDOW);
-  }
-  
-  return {
-    allowed: current <= RATE_LIMIT_REQUESTS,
-    remaining: Math.max(0, RATE_LIMIT_REQUESTS - current),
-  };
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -31,35 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Redis for rate limiting
-    const redis = new Redis({
-      url: Deno.env.get("UPSTASH_REDIS_REST_URL")!,
-      token: Deno.env.get("UPSTASH_REDIS_REST_TOKEN")!,
-    });
-
-    // Get client IP for rate limiting
-    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
-    const { allowed, remaining } = await checkRateLimit(redis, clientIP);
-    
-    if (!allowed) {
-      console.log(`Rate limit exceeded for IP: ${clientIP}`);
-      return new Response(
-        JSON.stringify({ success: false, error: "Too many requests. Please try again later." }),
-        { 
-          status: 429, 
-          headers: { 
-            ...corsHeaders, 
-            "Content-Type": "application/json",
-            "X-RateLimit-Remaining": remaining.toString(),
-          } 
-        }
-      );
-    }
-
     // Verify authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error("No authorization header provided");
       return new Response(
         JSON.stringify({ success: false, error: "Authentication required" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -87,24 +42,32 @@ serve(async (req) => {
     const PINATA_SECRET_KEY = Deno.env.get("PINATA_SECRET_KEY");
 
     if (!PINATA_API_KEY || !PINATA_SECRET_KEY) {
-      console.error("Pinata API keys not configured");
-      throw new Error("Pinata API keys not configured");
+      console.error("Pinata API keys not configured", {
+        hasApiKey: !!PINATA_API_KEY,
+        hasSecretKey: !!PINATA_SECRET_KEY,
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: "Pinata API keys not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const body = await req.json();
     const { fileData, fileName, fileType } = body;
 
     if (!fileData || !fileName) {
-      throw new Error("Missing fileData or fileName");
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing fileData or fileName" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Input validation
-    if (typeof fileData !== 'string' || fileData.length > 50 * 1024 * 1024) { // 50MB max base64
-      throw new Error("Invalid or too large file data");
-    }
-
-    if (typeof fileName !== 'string' || fileName.length > 255) {
-      throw new Error("Invalid file name");
+    if (typeof fileData !== 'string' || fileData.length > 50 * 1024 * 1024) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid or too large file data" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log(`User ${user.id} uploading file: ${fileName}, type: ${fileType}`);
@@ -147,7 +110,10 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Pinata error:", errorText);
-      throw new Error(`Pinata upload failed: ${errorText}`);
+      return new Response(
+        JSON.stringify({ success: false, error: `Pinata upload failed: ${errorText}` }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const result = await response.json();
@@ -160,22 +126,14 @@ serve(async (req) => {
         pinSize: result.PinSize,
         timestamp: result.Timestamp,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
     console.error("Error uploading to Pinata:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: errorMessage,
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ success: false, error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
