@@ -4,6 +4,7 @@
 
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/lib/firebase";
 import { logger } from "@/lib/logger";
 
 // Zod schema for validating IPFS metadata from untrusted sources
@@ -26,20 +27,26 @@ export type ModelMetadata = z.infer<typeof ModelMetadataSchema>;
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
 /**
+ * Get Firebase ID token for authenticated requests
+ */
+async function getFirebaseToken(): Promise<string> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("Authentication required - please sign in");
+  }
+  return await currentUser.getIdToken();
+}
+
+/**
  * Upload a file to IPFS via Pinata
  */
 export async function uploadFileToIPFS(file: File): Promise<string> {
   try {
-    // Client-side file size validation
     if (file.size > MAX_FILE_SIZE) {
       throw new Error(`File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
     }
 
-    // Verify user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      throw new Error("Authentication required to upload files");
-    }
+    const token = await getFirebaseToken();
 
     // Convert file to base64
     const arrayBuffer = await file.arrayBuffer();
@@ -57,7 +64,7 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
         fileType: file.type,
       },
       headers: {
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -95,11 +102,7 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
  */
 export async function uploadMetadataToIPFS(metadata: ModelMetadata): Promise<string> {
   try {
-    // Verify user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      throw new Error("Authentication required to upload metadata");
-    }
+    const token = await getFirebaseToken();
 
     const metadataJson = JSON.stringify(metadata, null, 2);
     const base64 = btoa(unescape(encodeURIComponent(metadataJson)));
@@ -111,7 +114,7 @@ export async function uploadMetadataToIPFS(metadata: ModelMetadata): Promise<str
         fileType: "application/json",
       },
       headers: {
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -148,7 +151,6 @@ export async function uploadMetadataToIPFS(metadata: ModelMetadata): Promise<str
  * Get IPFS gateway URL for a CID
  */
 export function getIPFSUrl(cid: string): string {
-  // Using Pinata gateway for faster access
   return `https://gateway.pinata.cloud/ipfs/${cid}`;
 }
 
@@ -164,16 +166,12 @@ export function getPublicIPFSUrl(cid: string): string {
  */
 export async function fetchMetadataFromIPFS(cid: string): Promise<ModelMetadata | null> {
   try {
-    // Validate CID format (basic check for IPFS CID pattern)
     if (!cid || !/^[a-zA-Z0-9]{46,59}$/.test(cid)) {
       logger.error("Invalid CID format:", cid);
       return null;
     }
 
-    // Try Pinata gateway first
     let response = await fetch(getIPFSUrl(cid));
-    
-    // Fallback to public gateway
     if (!response.ok) {
       response = await fetch(getPublicIPFSUrl(cid));
     }
@@ -183,8 +181,6 @@ export async function fetchMetadataFromIPFS(cid: string): Promise<ModelMetadata 
     }
     
     const rawData = await response.json();
-    
-    // Validate metadata against schema
     const result = ModelMetadataSchema.safeParse(rawData);
     if (!result.success) {
       logger.error("Invalid metadata format from IPFS:", result.error.message);
@@ -204,8 +200,6 @@ export async function fetchMetadataFromIPFS(cid: string): Promise<ModelMetadata 
 export async function downloadFromIPFS(cid: string, filename: string): Promise<void> {
   try {
     const url = getIPFSUrl(cid);
-    
-    // Fetch the file
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Failed to fetch file from IPFS");
@@ -214,15 +208,12 @@ export async function downloadFromIPFS(cid: string, filename: string): Promise<v
     const blob = await response.blob();
     const downloadUrl = window.URL.createObjectURL(blob);
     
-    // Create a temporary link and trigger download
     const link = document.createElement("a");
     link.href = downloadUrl;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    // Cleanup
     window.URL.revokeObjectURL(downloadUrl);
     
     logger.log("Downloaded from IPFS:", cid);
