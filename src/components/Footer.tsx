@@ -67,7 +67,7 @@ export const Footer = () => {
           <div>
             <h3 className="font-bold mb-2 md:mb-4 font-mono uppercase text-xs md:text-sm tracking-wider">Community</h3>
             <div className="flex space-x-2 md:space-x-3">
-              <a href="#" className="p-1.5 md:p-2 border-2 border-foreground rounded-md bg-background shadow-[2px_2px_0px_hsl(var(--foreground))] hover:shadow-[4px_4px_0px_hsl(var(--foreground))] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all duration-150">
+              <a href="https://github.com/Dharan-07/Vaultnet" className="p-1.5 md:p-2 border-2 border-foreground rounded-md bg-background shadow-[2px_2px_0px_hsl(var(--foreground))] hover:shadow-[4px_4px_0px_hsl(var(--foreground))] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all duration-150">
                 <Github className="w-4 md:w-5 h-4 md:h-5" />
               </a>
               <a href="#" className="p-1.5 md:p-2 border-2 border-foreground rounded-md bg-background shadow-[2px_2px_0px_hsl(var(--foreground))] hover:shadow-[4px_4px_0px_hsl(var(--foreground))] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all duration-150">
