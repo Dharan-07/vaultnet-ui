@@ -5,6 +5,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// In-memory rate limiting
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_UPLOADS_PER_USER = 5;
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(userId: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+
+  if (!entry || now >= entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: MAX_UPLOADS_PER_USER - 1 };
+  }
+
+  if (entry.count >= MAX_UPLOADS_PER_USER) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  entry.count++;
+  return { allowed: true, remaining: MAX_UPLOADS_PER_USER - entry.count };
+}
+
+// Cleanup stale entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of rateLimitMap) {
+    if (now >= val.resetAt) rateLimitMap.delete(key);
+  }
+}, 5 * 60 * 1000);
+
 async function verifyFirebaseToken(token: string): Promise<{ uid: string; email: string } | null> {
   try {
     const projectId = Deno.env.get("FIREBASE_PROJECT_ID");
@@ -53,7 +83,17 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Authenticated Firebase user: ${firebaseUser.uid}`);
+    // Rate limit check
+    const { allowed, remaining } = checkRateLimit(firebaseUser.uid);
+    if (!allowed) {
+      console.warn(`Rate limit exceeded for user ${firebaseUser.uid}`);
+      return new Response(
+        JSON.stringify({ success: false, error: "Too many uploads. Please wait a minute before trying again.", remaining: 0 }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Authenticated Firebase user: ${firebaseUser.uid} (${remaining} uploads remaining)`);
 
     const PINATA_API_KEY = Deno.env.get("PINATA_API_KEY");
     const PINATA_SECRET_KEY = Deno.env.get("PINATA_SECRET_KEY");
