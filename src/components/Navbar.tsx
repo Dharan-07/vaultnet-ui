@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, User, LayoutDashboard, PanelLeft, Upload, Search, Database, Box, ArrowLeft } from 'lucide-react';
+import { LogOut, User, LayoutDashboard, PanelLeft, Upload, Search, Database, Box, ArrowLeft, MessageSquare } from 'lucide-react';
 import { Button } from './ui/button';
 import { WalletButton } from './WalletButton';
 import Logo from '@/assets/vn_logo.png';
@@ -19,6 +19,7 @@ const navItems = [
   { title: 'Datasets', url: '/datasets', icon: Database },
   { title: 'Upload', url: '/upload', icon: Upload },
   { title: 'Find Users', url: '/search-users', icon: Search },
+  { title: 'Messages', url: '/messages', icon: MessageSquare },
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
 ];
 

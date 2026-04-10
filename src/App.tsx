@@ -19,6 +19,8 @@ import UploadDataset from "./pages/UploadDataset";
 import Profile from "./pages/Profile";
 import UserSearch from "./pages/UserSearch";
 import UserProfile from "./pages/UserProfile";
+import Messages from "./pages/Messages";
+import DirectMessage from "./pages/DirectMessage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +47,8 @@ const App = () => (
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/search-users" element={<ProtectedRoute><UserSearch /></ProtectedRoute>} />
               <Route path="/user/:uid" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+              <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+              <Route path="/dm/:recipientId" element={<ProtectedRoute><DirectMessage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>
