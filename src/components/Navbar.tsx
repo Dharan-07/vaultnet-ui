@@ -60,6 +60,11 @@ export const Navbar = () => {
                         <DropdownMenuItem className="gap-2 cursor-pointer font-medium">
                           <item.icon className="w-4 h-4" />
                           {item.title}
+                          {item.title === 'Messages' && unreadCount > 0 && (
+                            <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1.5 py-0 min-w-[18px] text-center">
+                              {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                          )}
                         </DropdownMenuItem>
                       </Link>
                     ))}
