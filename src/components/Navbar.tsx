@@ -28,6 +28,7 @@ export const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const unreadCount = useUnreadMessages();
 
   return (
     <nav className="border-b-3 border-foreground bg-card sticky top-0 z-50 shadow-[0_4px_0px_hsl(var(--foreground))]">
