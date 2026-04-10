@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,10 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import {
   User, Mail, Wallet, Globe, MapPin, Twitter, Github, Linkedin,
   ExternalLink, ArrowLeft, Copy, Check, Loader2, MessageSquare, Box, Tag
@@ -42,13 +38,12 @@ interface EnrichedModel extends ModelData {
 
 export default function UserProfile() {
   const { uid } = useParams<{ uid: string }>();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [models, setModels] = useState<EnrichedModel[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
-  const [contactOpen, setContactOpen] = useState(false);
-  const [contactMessage, setContactMessage] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -112,17 +107,6 @@ export default function UserProfile() {
     setCopiedField(field);
     toast({ title: `${field} copied to clipboard` });
     setTimeout(() => setCopiedField(null), 2000);
-  };
-
-  const handleSendContact = () => {
-    if (!contactMessage.trim()) return;
-    // Open mailto with pre-filled subject and body
-    const subject = encodeURIComponent(`Message from VaultNet user`);
-    const body = encodeURIComponent(contactMessage);
-    window.open(`mailto:${profile?.email}?subject=${subject}&body=${body}`, '_blank');
-    setContactOpen(false);
-    setContactMessage('');
-    toast({ title: 'Email client opened', description: 'Your message has been prepared in your email client.' });
   };
 
   const getInitials = (name: string) =>
@@ -204,18 +188,16 @@ export default function UserProfile() {
                     )}
                   </div>
 
-                  {/* Contact Button */}
-                  {profile.email && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-4 gap-2"
-                      onClick={() => setContactOpen(true)}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      Contact
-                    </Button>
-                  )}
+                  {/* Message Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 gap-2"
+                    onClick={() => navigate(`/dm/${profile.id}`)}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Message
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -380,32 +362,6 @@ export default function UserProfile() {
         </div>
       </div>
 
-      {/* Contact Dialog */}
-      <Dialog open={contactOpen} onOpenChange={setContactOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Contact {profile.name || 'User'}</DialogTitle>
-            <DialogDescription>
-              Write a message to send via email to this user.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="Write your message here..."
-            value={contactMessage}
-            onChange={(e) => setContactMessage(e.target.value)}
-            rows={5}
-          />
-          <DialogFooter className="gap-2">
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleSendContact} disabled={!contactMessage.trim()} className="gap-2">
-              <Mail className="w-4 h-4" />
-              Open in Email
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Footer />
     </div>
