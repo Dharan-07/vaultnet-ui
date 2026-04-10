@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,13 +42,12 @@ interface EnrichedModel extends ModelData {
 
 export default function UserProfile() {
   const { uid } = useParams<{ uid: string }>();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [models, setModels] = useState<EnrichedModel[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
-  const [contactOpen, setContactOpen] = useState(false);
-  const [contactMessage, setContactMessage] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -112,17 +111,6 @@ export default function UserProfile() {
     setCopiedField(field);
     toast({ title: `${field} copied to clipboard` });
     setTimeout(() => setCopiedField(null), 2000);
-  };
-
-  const handleSendContact = () => {
-    if (!contactMessage.trim()) return;
-    // Open mailto with pre-filled subject and body
-    const subject = encodeURIComponent(`Message from VaultNet user`);
-    const body = encodeURIComponent(contactMessage);
-    window.open(`mailto:${profile?.email}?subject=${subject}&body=${body}`, '_blank');
-    setContactOpen(false);
-    setContactMessage('');
-    toast({ title: 'Email client opened', description: 'Your message has been prepared in your email client.' });
   };
 
   const getInitials = (name: string) =>
@@ -204,18 +192,16 @@ export default function UserProfile() {
                     )}
                   </div>
 
-                  {/* Contact Button */}
-                  {profile.email && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-4 gap-2"
-                      onClick={() => setContactOpen(true)}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      Contact
-                    </Button>
-                  )}
+                  {/* Message Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 gap-2"
+                    onClick={() => navigate(`/dm/${profile.id}`)}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Message
+                  </Button>
                 </div>
               </div>
             </CardContent>
