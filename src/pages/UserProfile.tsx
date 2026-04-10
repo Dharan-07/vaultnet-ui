@@ -11,7 +11,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import {
   User, Mail, Wallet, Globe, MapPin, Twitter, Github, Linkedin,
   ExternalLink, ArrowLeft, Copy, Check, Loader2, MessageSquare, Box, Tag
