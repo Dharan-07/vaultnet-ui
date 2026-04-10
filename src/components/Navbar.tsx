@@ -5,6 +5,7 @@ import { WalletButton } from './WalletButton';
 import Logo from '@/assets/vn_logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,7 @@ export const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const unreadCount = useUnreadMessages();
 
   return (
     <nav className="border-b-3 border-foreground bg-card sticky top-0 z-50 shadow-[0_4px_0px_hsl(var(--foreground))]">
@@ -58,12 +60,26 @@ export const Navbar = () => {
                         <DropdownMenuItem className="gap-2 cursor-pointer font-medium">
                           <item.icon className="w-4 h-4" />
                           {item.title}
+                          {item.title === 'Messages' && unreadCount > 0 && (
+                            <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1.5 py-0 min-w-[18px] text-center">
+                              {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                          )}
                         </DropdownMenuItem>
                       </Link>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <WalletButton />
+                <Link to="/messages" className="relative">
+                  <Button variant="outline" size="icon">
+                    <MessageSquare className="w-4 md:w-5 h-4 md:h-5" />
+                  </Button>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center border-2 border-card">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon">
