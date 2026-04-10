@@ -9,9 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose
-} from '@/components/ui/dialog';
-import {
   User, Mail, Wallet, Globe, MapPin, Twitter, Github, Linkedin,
   ExternalLink, ArrowLeft, Copy, Check, Loader2, MessageSquare, Box, Tag
 } from 'lucide-react';
