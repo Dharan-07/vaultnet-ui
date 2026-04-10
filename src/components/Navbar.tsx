@@ -5,6 +5,7 @@ import { WalletButton } from './WalletButton';
 import Logo from '@/assets/vn_logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import {
   DropdownMenu,
   DropdownMenuContent,
