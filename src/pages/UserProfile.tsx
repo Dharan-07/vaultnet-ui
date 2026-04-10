@@ -366,32 +366,6 @@ export default function UserProfile() {
         </div>
       </div>
 
-      {/* Contact Dialog */}
-      <Dialog open={contactOpen} onOpenChange={setContactOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Contact {profile.name || 'User'}</DialogTitle>
-            <DialogDescription>
-              Write a message to send via email to this user.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="Write your message here..."
-            value={contactMessage}
-            onChange={(e) => setContactMessage(e.target.value)}
-            rows={5}
-          />
-          <DialogFooter className="gap-2">
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleSendContact} disabled={!contactMessage.trim()} className="gap-2">
-              <Mail className="w-4 h-4" />
-              Open in Email
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Footer />
     </div>
