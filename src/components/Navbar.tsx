@@ -70,7 +70,16 @@ export const Navbar = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <WalletButton />
+                <Link to="/messages" className="relative">
+                  <Button variant="outline" size="icon">
+                    <MessageSquare className="w-4 md:w-5 h-4 md:h-5" />
+                  </Button>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center border-2 border-card">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon">
